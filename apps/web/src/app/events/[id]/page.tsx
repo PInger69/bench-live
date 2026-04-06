@@ -111,6 +111,47 @@ export default function EventPage() {
     fetchTags(id, token)
   }, [id, token, fetchEvent, fetchTags, router])
 
+  // ── Keyboard navigation ────────────────────────────────────────────────────
+  // ArrowRight / ArrowLeft  → next / prev tick mark
+  // Shift + Arrow           → jump ±10 tick marks
+  // Skips when focus is inside a text input so typing still works normally.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
+
+      e.preventDefault()
+
+      // Build sorted list of visible tick times (respects active colour filter)
+      const visibleTags = (activeColours.length > 0
+        ? tags.filter((t) => activeColours.includes(getColourByName(t.name) ?? t.colour))
+        : tags
+      ).slice().sort((a, b) => a.time - b.time)
+
+      if (visibleTags.length === 0) return
+
+      const step   = e.shiftKey ? 10 : 1
+      const times  = visibleTags.map((t) => t.time)
+      const fwd    = e.key === 'ArrowRight'
+
+      if (fwd) {
+        // Find all ticks strictly after current time, take the step-th one
+        const ahead = times.filter((t) => t > currentTime + 0.1)
+        const target = ahead[step - 1] ?? ahead[ahead.length - 1]
+        if (target !== undefined) handleSeek(target)
+      } else {
+        // Find all ticks strictly before current time, take the step-th from the end
+        const behind = times.filter((t) => t < currentTime - 0.1)
+        const target = behind[behind.length - step] ?? behind[0]
+        if (target !== undefined) handleSeek(target)
+      }
+    }
+
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [tags, currentTime, activeColours, getColourByName, handleSeek])
+
   useEffect(() => {
     if (event?.sportType) {
       const s = event.sportType as string
