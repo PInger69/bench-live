@@ -7,7 +7,9 @@ import { useEventDetailStore } from '@/store/eventDetail'
 import { VideoPlayer, type VideoPlayerHandle } from '@/components/player/VideoPlayer'
 import { TagTimeline } from '@/components/player/TagTimeline'
 import { TagButtons } from '@/components/tagger/TagButtons'
-import { ControlsBar, PERIODS, TAG_SETS, TAG_COLOURS } from '@/components/tagger/ControlsBar'
+import { ControlsBar, PERIODS, TAG_SETS } from '@/components/tagger/ControlsBar'
+import { TagColourSettings } from '@/components/settings/TagColourSettings'
+import { useTagColours } from '@/hooks/useTagColours'
 import { apiFetch } from '@/lib/utils'
 import type { Tag } from '@bench-live/shared'
 import { TagType } from '@bench-live/shared'
@@ -21,12 +23,14 @@ export default function EventPage() {
   const playerRef = useRef<VideoPlayerHandle>(null)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+
+  // Per-tag colour map
+  const { getColour, setColour, resetAll, colourMap } = useTagColours()
 
   // Tagger state
-  const defaultSport = (event?.sportType ?? 'SOCCER') as string
-  const [activeSport, setActiveSport] = useState(defaultSport)
-  const [activePeriod, setActivePeriod] = useState(PERIODS[defaultSport]?.[0] ?? '1H')
-  const [activeColour, setActiveColour] = useState(user?.colour ?? TAG_COLOURS[0].value)
+  const [activeSport, setActiveSport] = useState('SOCCER')
+  const [activePeriod, setActivePeriod] = useState('1H')
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([])
   const [rating, setRating] = useState(0)
   const [coachPick, setCoachPick] = useState(false)
@@ -36,7 +40,7 @@ export default function EventPage() {
 
   function handleSportChange(sport: string) {
     setActiveSport(sport)
-    setActivePeriod(PERIODS[sport]?.[0] ?? 'P1')
+    setActivePeriod(PERIODS[sport]?.[0] ?? '1H')
   }
 
   const handleSeek = useCallback((time: number) => {
@@ -55,7 +59,7 @@ export default function EventPage() {
           name,
           time: currentTime,
           duration: 30,
-          colour: activeColour,
+          colour: getColour(name),
           period: activePeriod,
           players: selectedPlayers,
           comment: comment || undefined,
@@ -80,7 +84,6 @@ export default function EventPage() {
     fetchTags(id, token)
   }, [id, token, fetchEvent, fetchTags, router])
 
-  // Sync sport with event type once loaded
   useEffect(() => {
     if (event?.sportType) {
       const s = event.sportType as string
@@ -110,38 +113,57 @@ export default function EventPage() {
     <main className="h-screen bg-gray-950 flex flex-col overflow-hidden">
 
       {/* ── Header ── */}
-      <header className="flex-shrink-0 bg-gray-900 border-b border-gray-800 px-4 py-2 flex items-center justify-between">
+      <header className="flex-shrink-0 bg-gray-900 border-b border-gray-800 px-3 py-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <button onClick={() => router.push('/events')} className="text-gray-400 hover:text-white text-sm flex-shrink-0">
-            ← Events
+          <button onClick={() => router.push('/events')} className="text-gray-400 hover:text-white text-sm flex-shrink-0 touch-manipulation p-1">
+            ←
           </button>
           <span className="text-gray-700 flex-shrink-0">/</span>
           <h1 className="text-sm font-semibold text-white truncate">{event.name}</h1>
         </div>
+
         <div className="flex items-center gap-2 flex-shrink-0">
           {event.homeTeam && event.visitTeam && (
             <span className="hidden sm:block text-xs text-gray-400 font-medium">
               {event.homeTeam.shortName} <span className="text-gray-600">vs</span> {event.visitTeam.shortName}
             </span>
           )}
+
           {event.status === 'LIVE' ? (
-            <span className="flex items-center gap-1.5 text-xs font-bold rounded-full px-3 py-1 bg-red-900/50 text-red-400 ring-1 ring-red-700 tag-live">
+            <span className="flex items-center gap-1.5 text-xs font-bold rounded-full px-2.5 py-1 bg-red-900/50 text-red-400 ring-1 ring-red-700 tag-live">
               <span className="h-1.5 w-1.5 rounded-full bg-red-400" /> LIVE
             </span>
           ) : (
-            <span className="text-xs rounded-full px-3 py-1 bg-gray-800 text-gray-400">{event.status}</span>
+            <span className="text-xs rounded-full px-2.5 py-1 bg-gray-800 text-gray-400">{event.status}</span>
           )}
-          {/* Debug: clear all tags */}
+
+          {/* Debug clear tags */}
           {tags.length > 0 && (
             <button
               onClick={() => confirm(`Delete all ${tags.length} tags?`) && clearAllTags(token!)}
-              className="text-xs text-red-600 hover:text-red-400 transition-colors"
+              className="text-gray-600 hover:text-red-400 transition-colors p-1 touch-manipulation"
+              title="Clear all tags"
             >
               🗑
             </button>
           )}
+
+          {/* ⚙ Settings gear */}
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="h-8 w-8 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-400 hover:text-white transition-colors touch-manipulation"
+            title="Tag colour settings"
+            aria-label="Open tag colour settings"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </button>
+
+          {/* User avatar */}
           <div
-            className="h-7 w-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+            className="h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
             style={{ background: user?.colour ?? '#6366F1' }}
           >
             {user?.name?.[0] ?? '?'}
@@ -149,23 +171,23 @@ export default function EventPage() {
         </div>
       </header>
 
-      {/* ── Body: Left Tags | Video+Timeline | Right Tags ── */}
+      {/* ── Body: Left Tags | Video + Timeline + Controls | Right Tags ── */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* Left tag buttons */}
+        {/* Left thumb tag buttons */}
         <TagButtons
           side="left"
           names={leftTags}
-          colour={activeColour}
+          getColour={getColour}
           disabled={!!tagging}
           tagging={tagging}
           lastTagged={lastTagged}
           onTag={handleTag}
         />
 
-        {/* Centre column: video + timeline + controls */}
+        {/* Centre column */}
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-          {/* Video — fills available vertical space */}
+          {/* Video */}
           <div className="flex-1 min-h-0 bg-black flex items-center justify-center">
             <VideoPlayer
               ref={playerRef}
@@ -185,19 +207,19 @@ export default function EventPage() {
 
           {/* Controls bar */}
           <ControlsBar
-            defaultSport={defaultSport}
+            defaultSport={activeSport}
             currentTime={currentTime}
             comment={comment}
             setComment={setComment}
             onSportChange={handleSportChange}
             onPeriodChange={setActivePeriod}
-            onColourChange={setActiveColour}
+            onColourChange={() => {}}
             onPlayersChange={setSelectedPlayers}
             onRatingChange={setRating}
             onCoachPickChange={setCoachPick}
             activeSport={activeSport}
             activePeriod={activePeriod}
-            activeColour={activeColour}
+            activeColour={''}
             selectedPlayers={selectedPlayers}
             rating={rating}
             coachPick={coachPick}
@@ -205,17 +227,27 @@ export default function EventPage() {
           />
         </div>
 
-        {/* Right tag buttons */}
+        {/* Right thumb tag buttons */}
         <TagButtons
           side="right"
           names={rightTags}
-          colour={activeColour}
+          getColour={getColour}
           disabled={!!tagging}
           tagging={tagging}
           lastTagged={lastTagged}
           onTag={handleTag}
         />
       </div>
+
+      {/* ── Settings drawer ── */}
+      <TagColourSettings
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        activeSport={activeSport}
+        colourMap={colourMap}
+        onSetColour={setColour}
+        onResetAll={resetAll}
+      />
     </main>
   )
 }
