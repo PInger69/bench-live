@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { requireAuth, requireRole } from '../middleware/auth.js'
-import { UserRole } from '@bench-live/shared'
+import { UserRole } from '@prisma/client'
 
 export const usersRoutes: FastifyPluginAsync = async (app) => {
   app.addHook('preHandler', requireAuth)

@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { requireAuth } from '../middleware/auth.js'
 import { z } from 'zod'
-import { SportType, EventStatus } from '@bench-live/shared'
+import { SportType, EventStatus } from '@prisma/client'
 
 const createEventSchema = z.object({
   name: z.string().min(1),

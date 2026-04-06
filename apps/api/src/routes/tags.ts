@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { requireAuth } from '../middleware/auth.js'
 import { z } from 'zod'
-import { TagType, WsEventType } from '@bench-live/shared'
+import { TagType } from '@prisma/client'
 
 const createTagSchema = z.object({
   eventId: z.string(),
@@ -69,7 +69,7 @@ export const tagsRoutes: FastifyPluginAsync = async (app) => {
     app.websocketServer?.clients.forEach((client) => {
       if ((client as any).eventId === result.data.eventId && client.readyState === 1) {
         client.send(JSON.stringify({
-          type: WsEventType.TAG_CREATED,
+          type: 'TAG_CREATED',
           payload: tag,
           eventId: result.data.eventId,
           userId,
