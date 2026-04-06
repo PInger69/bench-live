@@ -25,8 +25,11 @@ export default function EventPage() {
   const [duration, setDuration] = useState(0)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
-  // Per-tag colour map
-  const { getColour, setColour, resetAll, colourMap } = useTagColours()
+  // Per-tag colour map + custom names
+  const { getColour, setColour, colourMap, getName, setName, nameMap, resetAll } = useTagColours()
+
+  // Timeline colour filter (empty = show all)
+  const [activeColours, setActiveColours] = useState<string[]>([])
 
   // Tagger state
   const [activeSport, setActiveSport] = useState('SOCCER')
@@ -47,19 +50,21 @@ export default function EventPage() {
     playerRef.current?.seekTo(time)
   }, [])
 
-  async function handleTag(name: string) {
+  async function handleTag(tagKey: string) {
     if (!user || tagging || !token) return
-    setTagging(name)
+    setTagging(tagKey)
+    // Use the display name (custom or default key) for the stored tag name
+    const displayName = getName(tagKey)
     try {
       const tag = await apiFetch<Tag>('/api/tags', token, {
         method: 'POST',
         body: JSON.stringify({
           eventId: id,
           type: TagType.NORMAL,
-          name,
+          name: displayName,
           time: currentTime,
           duration: 30,
-          colour: getColour(name),
+          colour: getColour(tagKey),
           period: activePeriod,
           players: selectedPlayers,
           comment: comment || undefined,
@@ -68,7 +73,7 @@ export default function EventPage() {
         }),
       })
       addTag(tag)
-      setLastTagged(name)
+      setLastTagged(displayName)
       setComment('')
       setTimeout(() => setLastTagged(null), 1800)
     } catch (err) {
@@ -103,10 +108,10 @@ export default function EventPage() {
     )
   }
 
-  const allTagNames = TAG_SETS[activeSport] ?? TAG_SETS.GENERIC
-  const mid = Math.ceil(allTagNames.length / 2)
-  const leftTags = allTagNames.slice(0, mid)
-  const rightTags = allTagNames.slice(mid)
+  const allTagKeys = TAG_SETS[activeSport] ?? TAG_SETS.GENERIC
+  const mid = Math.ceil(allTagKeys.length / 2)
+  const leftTags = allTagKeys.slice(0, mid)
+  const rightTags = allTagKeys.slice(mid)
   const primaryFeed = event.feeds?.[0] ?? null
 
   return (
@@ -152,8 +157,8 @@ export default function EventPage() {
           <button
             onClick={() => setSettingsOpen(true)}
             className="h-8 w-8 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-400 hover:text-white transition-colors touch-manipulation"
-            title="Tag colour settings"
-            aria-label="Open tag colour settings"
+            title="Tag Names & Colours"
+            aria-label="Open tag names and colour settings"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3"/>
@@ -179,6 +184,7 @@ export default function EventPage() {
           side="left"
           names={leftTags}
           getColour={getColour}
+          getName={getName}
           disabled={!!tagging}
           tagging={tagging}
           lastTagged={lastTagged}
@@ -197,12 +203,13 @@ export default function EventPage() {
             />
           </div>
 
-          {/* Tag timeline */}
+          {/* Tag timeline — filtered by activeColours */}
           <TagTimeline
             tags={tags}
             currentTime={currentTime}
             duration={duration}
             onSeek={handleSeek}
+            activeColours={activeColours}
           />
 
           {/* Controls bar */}
@@ -213,13 +220,13 @@ export default function EventPage() {
             setComment={setComment}
             onSportChange={handleSportChange}
             onPeriodChange={setActivePeriod}
-            onColourChange={() => {}}
             onPlayersChange={setSelectedPlayers}
             onRatingChange={setRating}
             onCoachPickChange={setCoachPick}
+            activeColours={activeColours}
+            onColourFilterChange={setActiveColours}
             activeSport={activeSport}
             activePeriod={activePeriod}
-            activeColour={''}
             selectedPlayers={selectedPlayers}
             rating={rating}
             coachPick={coachPick}
@@ -232,6 +239,7 @@ export default function EventPage() {
           side="right"
           names={rightTags}
           getColour={getColour}
+          getName={getName}
           disabled={!!tagging}
           tagging={tagging}
           lastTagged={lastTagged}
@@ -239,13 +247,15 @@ export default function EventPage() {
         />
       </div>
 
-      {/* ── Settings drawer ── */}
+      {/* ── Tag Names & Colours settings drawer ── */}
       <TagColourSettings
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         activeSport={activeSport}
         colourMap={colourMap}
+        nameMap={nameMap}
         onSetColour={setColour}
+        onSetName={setName}
         onResetAll={resetAll}
       />
     </main>

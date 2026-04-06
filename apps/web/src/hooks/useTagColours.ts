@@ -17,8 +17,8 @@ const COLOUR_DEFAULTS: Record<string, string> = {
   'CONVERSION':       '#F97316',
 
   // Shots / Attempts
-  'SHOT ON TARGET':   '#10B981',
-  'SHOT OFF TARGET':  '#F59E0B',
+  'SHOT ON':          '#10B981',
+  'SHOT OFF':         '#F59E0B',
   'SHOT':             '#10B981',
   'SAVE':             '#3B82F6',
 
@@ -30,7 +30,6 @@ const COLOUR_DEFAULTS: Record<string, string> = {
   'FACE OFF':         '#14B8A6',
   'KICKOFF':          '#14B8A6',
   'PUNT':             '#14B8A6',
-  'FREE THROW ':      '#14B8A6',
 
   // Discipline
   'YELLOW CARD':      '#F59E0B',
@@ -71,7 +70,6 @@ const COLOUR_DEFAULTS: Record<string, string> = {
   'SACK':             '#EF4444',
   '1ST DOWN':         '#10B981',
   'RED ZONE':         '#EF4444',
-  'INTERCEPTION ':    '#EC4899',
 
   // Basketball
   'REBOUND':          '#3B82F6',
@@ -85,45 +83,82 @@ const COLOUR_DEFAULTS: Record<string, string> = {
   'NOTE':             '#6B7280',
 }
 
-const STORAGE_KEY = 'bench-live:tag-colours'
+const COLOUR_KEY = 'bench-live:tag-colours'
+const NAMES_KEY  = 'bench-live:tag-names'
 const FALLBACK_COLOUR = '#3B82F6'
 
 export type TagColourMap = Record<string, string>
+export type TagNameMap   = Record<string, string>
 
 export function useTagColours() {
   const [colourMap, setColourMap] = useState<TagColourMap>({})
+  const [nameMap,   setNameMap]   = useState<TagNameMap>({})
 
-  // Load from localStorage on mount
+  // Load persisted data on mount
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored) {
-        setColourMap(JSON.parse(stored))
-      }
+      const storedColours = localStorage.getItem(COLOUR_KEY)
+      if (storedColours) setColourMap(JSON.parse(storedColours))
+
+      const storedNames = localStorage.getItem(NAMES_KEY)
+      if (storedNames) setNameMap(JSON.parse(storedNames))
     } catch {}
   }, [])
 
-  // Get colour for a tag — user override > sensible default > fallback
-  const getColour = useCallback((tagName: string): string => {
-    return colourMap[tagName] ?? COLOUR_DEFAULTS[tagName] ?? FALLBACK_COLOUR
+  // ── Colours ────────────────────────────────────────────────────────────────
+
+  /** Returns: user override → sensible default → fallback blue */
+  const getColour = useCallback((tagKey: string): string => {
+    return colourMap[tagKey] ?? COLOUR_DEFAULTS[tagKey] ?? FALLBACK_COLOUR
   }, [colourMap])
 
-  // Set colour for a tag and persist
-  const setColour = useCallback((tagName: string, colour: string) => {
+  const setColour = useCallback((tagKey: string, colour: string) => {
     setColourMap((prev) => {
-      const next = { ...prev, [tagName]: colour }
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)) } catch {}
+      const next = { ...prev, [tagKey]: colour }
+      try { localStorage.setItem(COLOUR_KEY, JSON.stringify(next)) } catch {}
       return next
     })
   }, [])
 
-  // Reset all to defaults
-  const resetAll = useCallback(() => {
+  const resetAllColours = useCallback(() => {
     setColourMap({})
-    try { localStorage.removeItem(STORAGE_KEY) } catch {}
+    try { localStorage.removeItem(COLOUR_KEY) } catch {}
   }, [])
 
-  return { getColour, setColour, resetAll, colourMap }
+  // ── Names ──────────────────────────────────────────────────────────────────
+
+  /** Returns: user-defined name → original key */
+  const getName = useCallback((tagKey: string): string => {
+    return nameMap[tagKey] ?? tagKey
+  }, [nameMap])
+
+  const setName = useCallback((tagKey: string, name: string) => {
+    setNameMap((prev) => {
+      const next = { ...prev, [tagKey]: name }
+      try { localStorage.setItem(NAMES_KEY, JSON.stringify(next)) } catch {}
+      return next
+    })
+  }, [])
+
+  const resetAllNames = useCallback(() => {
+    setNameMap({})
+    try { localStorage.removeItem(NAMES_KEY) } catch {}
+  }, [])
+
+  /** Reset both colours and names */
+  const resetAll = useCallback(() => {
+    resetAllColours()
+    resetAllNames()
+  }, [resetAllColours, resetAllNames])
+
+  return {
+    // colours
+    getColour, setColour, resetAllColours, colourMap,
+    // names
+    getName, setName, resetAllNames, nameMap,
+    // combined
+    resetAll,
+  }
 }
 
 export { COLOUR_DEFAULTS }

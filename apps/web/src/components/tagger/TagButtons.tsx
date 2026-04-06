@@ -6,13 +6,15 @@ interface TagButtonsProps {
   names: string[]
   side: 'left' | 'right'
   getColour: (name: string) => string
+  /** Optional: returns a custom display label for a tag key */
+  getName?: (name: string) => string
   disabled: boolean
   tagging: string | null
   lastTagged: string | null
   onTag: (name: string) => void
 }
 
-export function TagButtons({ names, side, getColour, disabled, tagging, lastTagged, onTag }: TagButtonsProps) {
+export function TagButtons({ names, side, getColour, getName, disabled, tagging, lastTagged, onTag }: TagButtonsProps) {
   return (
     <div
       className={cn(
@@ -31,6 +33,7 @@ export function TagButtons({ names, side, getColour, disabled, tagging, lastTagg
           <TagButton
             key={name}
             name={name}
+            label={getName ? getName(name) : name}
             colour={colour}
             side={side}
             isTagging={isTagging}
@@ -44,8 +47,9 @@ export function TagButtons({ names, side, getColour, disabled, tagging, lastTagg
   )
 }
 
-function TagButton({ name, colour, side, isTagging, wasTagged, disabled, onTag }: {
+function TagButton({ name, label, colour, side, isTagging, wasTagged, disabled, onTag }: {
   name: string
+  label: string
   colour: string
   side: 'left' | 'right'
   isTagging: boolean
@@ -105,7 +109,7 @@ function TagButton({ name, colour, side, isTagging, wasTagged, disabled, onTag }
             <span className="h-1 w-1 rounded-full bg-white animate-bounce" style={{ animationDelay: '150ms' }} />
             <span className="h-1 w-1 rounded-full bg-white animate-bounce" style={{ animationDelay: '300ms' }} />
           </span>
-        ) : name}
+        ) : label}
       </span>
 
       {/* Colour indicator dot */}

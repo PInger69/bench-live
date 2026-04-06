@@ -9,14 +9,20 @@ interface TagTimelineProps {
   currentTime: number
   duration: number
   onSeek: (time: number) => void
+  /** When non-empty, only ticks whose colour is in this list are shown */
+  activeColours?: string[]
 }
 
-export function TagTimeline({ tags, currentTime, duration, onSeek }: TagTimelineProps) {
+export function TagTimeline({ tags, currentTime, duration, onSeek, activeColours = [] }: TagTimelineProps) {
   const barRef = useRef<HTMLDivElement>(null)
   const [hoveredTag, setHoveredTag] = useState<Tag | null>(null)
-  const [hoverX, setHoverX] = useState(0)
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
+
+  // Apply colour filter — if no colours selected, show everything
+  const visibleTags = activeColours.length > 0
+    ? tags.filter((t) => activeColours.includes(t.colour))
+    : tags
 
   function handleBarClick(e: React.MouseEvent | React.TouchEvent) {
     if (!barRef.current || duration === 0) return
@@ -50,8 +56,8 @@ export function TagTimeline({ tags, currentTime, duration, onSeek }: TagTimeline
           style={{ width: `${progress}%` }}
         />
 
-        {/* Tag tick marks */}
-        {duration > 0 && tags.map((tag) => {
+        {/* Tag tick marks — filtered by activeColours */}
+        {duration > 0 && visibleTags.map((tag) => {
           const pct = (tag.time / duration) * 100
           return (
             <button
@@ -59,7 +65,7 @@ export function TagTimeline({ tags, currentTime, duration, onSeek }: TagTimeline
               className="absolute top-0 bottom-0 w-1 -translate-x-0.5 group/tick"
               style={{ left: `${pct}%` }}
               onClick={(e) => { e.stopPropagation(); onSeek(tag.time) }}
-              onMouseEnter={(e) => { setHoveredTag(tag); setHoverX(e.currentTarget.getBoundingClientRect().left) }}
+              onMouseEnter={() => setHoveredTag(tag)}
               onMouseLeave={() => setHoveredTag(null)}
             >
               {/* Tick line */}
@@ -73,20 +79,20 @@ export function TagTimeline({ tags, currentTime, duration, onSeek }: TagTimeline
 
         {/* Playhead */}
         <div
-          className="absolute top-0 bottom-0 w-0.5 -translate-x-px bg-white shadow-lg shadow-white/20"
+          className="absolute top-0 bottom-0 w-0.5 -translate-x-px bg-white shadow-lg shadow-white/20 pointer-events-none"
           style={{ left: `${progress}%` }}
         >
           <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-3.5 w-3.5 rounded-full bg-white shadow" />
         </div>
 
         {/* Tooltip */}
-        {hoveredTag && (
+        {hoveredTag && duration > 0 && (
           <div
             className="absolute bottom-full mb-2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap pointer-events-none shadow-lg ring-1 ring-gray-700 z-50"
             style={{ left: `${(hoveredTag.time / duration) * 100}%` }}
           >
             <div className="flex items-center gap-1.5">
-              <div className="h-2 w-2 rounded-full" style={{ background: hoveredTag.colour }} />
+              <div className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: hoveredTag.colour }} />
               <span className="font-medium">{hoveredTag.name}</span>
               <span className="text-gray-400">{formatTime(hoveredTag.time)}</span>
             </div>
@@ -94,6 +100,19 @@ export function TagTimeline({ tags, currentTime, duration, onSeek }: TagTimeline
           </div>
         )}
       </div>
+
+      {/* Filter indicator */}
+      {activeColours.length > 0 && (
+        <div className="flex items-center gap-1.5 mt-1 px-0.5">
+          <span className="text-xs text-gray-600">Showing</span>
+          {activeColours.map((c) => (
+            <span key={c} className="h-2 w-2 rounded-full" style={{ background: c }} />
+          ))}
+          <span className="text-xs text-gray-600">
+            ({visibleTags.length} of {tags.length})
+          </span>
+        </div>
+      )}
     </div>
   )
 }

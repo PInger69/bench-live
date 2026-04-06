@@ -22,7 +22,7 @@ export const PERIODS: Record<string, string[]> = {
 }
 
 export const TAG_SETS: Record<string, string[]> = {
-  SOCCER:     ['GOAL', 'SHOT ON TARGET', 'SHOT OFF TARGET', 'SAVE', 'CORNER', 'FREE KICK', 'OFFSIDE', 'FOUL', 'YELLOW CARD', 'RED CARD', 'SUBSTITUTION', 'KEY PASS', 'TACKLE', 'INTERCEPTION', 'PENALTY'],
+  SOCCER:     ['GOAL', 'SHOT ON', 'SHOT OFF', 'SAVE', 'CORNER', 'FREE KICK', 'OFFSIDE', 'FOUL', 'YELLOW CARD', 'RED CARD', 'SUBSTITUTION', 'KEY PASS', 'TACKLE', 'INTERCEPTION', 'PENALTY'],
   FOOTBALL:   ['TOUCHDOWN', 'FIELD GOAL', 'INTERCEPTION', 'SACK', 'FUMBLE', 'PUNT', 'KICKOFF', 'PENALTY', '1ST DOWN', 'RED ZONE', 'KEY PLAY', 'TURNOVER'],
   HOCKEY:     ['GOAL', 'SHOT', 'SAVE', 'PENALTY', 'POWER PLAY', 'SHORT HANDED', 'FACE OFF', 'ICING', 'OFFSIDE', 'FIGHT', 'TURNOVER', 'KEY PLAY'],
   RUGBY:      ['TRY', 'CONVERSION', 'PENALTY GOAL', 'DROP GOAL', 'TACKLE', 'LINEOUT', 'SCRUM', 'KNOCK ON', 'PENALTY', 'KEY PLAY', 'TURNOVER'],
@@ -30,15 +30,18 @@ export const TAG_SETS: Record<string, string[]> = {
   GENERIC:    ['KEY MOMENT', 'HIGHLIGHT', 'REVIEW', 'GOOD', 'BAD', 'TRAINING POINT', 'TACTIC', 'NOTE'],
 }
 
-export const TAG_COLOURS = [
-  { value: '#3B82F6', label: 'Blue'   },
-  { value: '#10B981', label: 'Green'  },
-  { value: '#F59E0B', label: 'Amber'  },
-  { value: '#EF4444', label: 'Red'    },
-  { value: '#8B5CF6', label: 'Purple' },
-  { value: '#EC4899', label: 'Pink'   },
-  { value: '#14B8A6', label: 'Teal'   },
-  { value: '#F97316', label: 'Orange' },
+/** Palette used for the timeline colour filter toggles */
+export const FILTER_PALETTE = [
+  '#EF4444', // Red
+  '#F97316', // Orange
+  '#F59E0B', // Amber
+  '#10B981', // Green
+  '#14B8A6', // Teal
+  '#3B82F6', // Blue
+  '#6366F1', // Indigo
+  '#8B5CF6', // Purple
+  '#EC4899', // Pink
+  '#6B7280', // Gray
 ]
 
 export const DEMO_PLAYERS = [
@@ -53,13 +56,14 @@ interface ControlsBarProps {
   setComment: (v: string) => void
   onSportChange: (sport: string) => void
   onPeriodChange: (period: string) => void
-  onColourChange: (colour: string) => void
   onPlayersChange: (players: string[]) => void
   onRatingChange: (rating: number) => void
   onCoachPickChange: (v: boolean) => void
+  /** Currently active colour filters (empty = show all) */
+  activeColours: string[]
+  onColourFilterChange: (colours: string[]) => void
   activeSport: string
   activePeriod: string
-  activeColour: string
   selectedPlayers: string[]
   rating: number
   coachPick: boolean
@@ -68,8 +72,9 @@ interface ControlsBarProps {
 
 export function ControlsBar({
   currentTime, comment, setComment,
-  onSportChange, onPeriodChange, onColourChange, onPlayersChange, onRatingChange, onCoachPickChange,
-  activeSport, activePeriod, activeColour, selectedPlayers, rating, coachPick, lastTagged,
+  onSportChange, onPeriodChange, onPlayersChange, onRatingChange, onCoachPickChange,
+  activeColours, onColourFilterChange,
+  activeSport, activePeriod, selectedPlayers, rating, coachPick, lastTagged,
 }: ControlsBarProps) {
   const [showPlayers, setShowPlayers] = useState(false)
   const periods = PERIODS[activeSport] ?? PERIODS.GENERIC
@@ -80,9 +85,17 @@ export function ControlsBar({
     )
   }
 
+  function toggleColourFilter(colour: string) {
+    if (activeColours.includes(colour)) {
+      onColourFilterChange(activeColours.filter((c) => c !== colour))
+    } else {
+      onColourFilterChange([...activeColours, colour])
+    }
+  }
+
   return (
     <div className="flex-shrink-0 bg-gray-900 border-t border-gray-800">
-      {/* Row 1: Sport | Period | Colour | Players | Rating | Coach Pick | Time */}
+      {/* Row 1: Sport | Period | Colour filters | Players | Rating | Coach Pick | Time */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-3 py-2 border-b border-gray-800/60">
 
         {/* Sport */}
@@ -110,20 +123,34 @@ export function ControlsBar({
           ))}
         </div>
 
-        {/* Colour */}
+        {/* Colour filter toggles */}
         <div className="flex items-center gap-1">
-          {TAG_COLOURS.map((c) => (
+          {activeColours.length > 0 && (
             <button
-              key={c.value}
-              onClick={() => onColourChange(c.value)}
-              title={c.label}
-              className={cn(
-                'h-6 w-6 rounded-full touch-manipulation transition-all',
-                activeColour === c.value ? 'ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110' : 'opacity-50 active:opacity-100'
-              )}
-              style={{ background: c.value }}
-            />
-          ))}
+              onClick={() => onColourFilterChange([])}
+              className="text-xs text-gray-500 hover:text-white transition-colors px-1.5 py-1 rounded"
+              title="Clear colour filter"
+            >
+              All
+            </button>
+          )}
+          {FILTER_PALETTE.map((colour) => {
+            const active = activeColours.includes(colour)
+            return (
+              <button
+                key={colour}
+                onClick={() => toggleColourFilter(colour)}
+                title={active ? `Remove ${colour} filter` : `Filter to ${colour}`}
+                className={cn(
+                  'h-6 w-6 rounded-full touch-manipulation transition-all duration-150 flex-shrink-0',
+                  active
+                    ? 'ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110 opacity-100'
+                    : 'opacity-35 hover:opacity-70 active:scale-95'
+                )}
+                style={{ background: colour }}
+              />
+            )
+          })}
         </div>
 
         {/* Players */}
@@ -163,7 +190,7 @@ export function ControlsBar({
 
         {/* Rating */}
         <div className="flex items-center gap-0.5">
-          {[1,2,3,4,5].map((s) => (
+          {[1, 2, 3, 4, 5].map((s) => (
             <button
               key={s}
               onClick={() => onRatingChange(rating === s ? 0 : s)}
