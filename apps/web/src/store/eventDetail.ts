@@ -11,6 +11,7 @@ interface EventDetailState {
   fetchTags: (eventId: string, token: string) => Promise<void>
   addTag: (tag: Tag) => void
   updateTag: (id: string, updates: Partial<Tag>) => void
+  clearAllTags: (token: string) => Promise<void>
 }
 
 export const useEventDetailStore = create<EventDetailState>((set) => ({
@@ -42,4 +43,17 @@ export const useEventDetailStore = create<EventDetailState>((set) => ({
   addTag: (tag) => set((s) => ({ tags: [...s.tags, tag].sort((a, b) => a.time - b.time) })),
   updateTag: (id, updates) =>
     set((s) => ({ tags: s.tags.map((t) => (t.id === id ? { ...t, ...updates } : t)) })),
+
+  clearAllTags: async (token) => {
+    const { tags } = useEventDetailStore.getState()
+    await Promise.all(
+      tags.map((t) =>
+        fetch(`${API}/api/tags/${t.id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      )
+    )
+    set({ tags: [] })
+  },
 }))

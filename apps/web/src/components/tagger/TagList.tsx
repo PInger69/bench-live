@@ -7,9 +7,10 @@ import { formatTime, cn } from '@/lib/utils'
 interface TagListProps {
   tags: Tag[]
   onSeek?: (time: number) => void
+  onClearAll?: () => void
 }
 
-export function TagList({ tags, onSeek }: TagListProps) {
+export function TagList({ tags, onSeek, onClearAll }: TagListProps) {
   const [search, setSearch] = useState('')
   const [filterCoachPick, setFilterCoachPick] = useState(false)
   const [filterMinRating, setFilterMinRating] = useState(0)
@@ -41,14 +42,29 @@ export function TagList({ tags, onSeek }: TagListProps) {
           <h2 className="text-sm font-semibold text-white">
             Tags <span className="text-gray-500 font-normal text-xs">({filtered.length}/{tags.length})</span>
           </h2>
-          {(filterCoachPick || filterMinRating > 0 || filterPeriod || search) && (
-            <button
-              onClick={() => { setSearch(''); setFilterCoachPick(false); setFilterMinRating(0); setFilterPeriod('') }}
-              className="text-xs text-gray-500 hover:text-white"
-            >
-              Clear filters
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {(filterCoachPick || filterMinRating > 0 || filterPeriod || search) && (
+              <button
+                onClick={() => { setSearch(''); setFilterCoachPick(false); setFilterMinRating(0); setFilterPeriod('') }}
+                className="text-xs text-gray-500 hover:text-white"
+              >
+                Clear filters
+              </button>
+            )}
+            {tags.length > 0 && onClearAll && (
+              <button
+                onClick={() => {
+                  if (confirm(`Delete all ${tags.length} tags? This cannot be undone.`)) {
+                    onClearAll()
+                  }
+                }}
+                className="text-xs text-red-500 hover:text-red-400 font-medium transition-colors"
+                title="Debug: delete all tags"
+              >
+                🗑 Clear all
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Search */}

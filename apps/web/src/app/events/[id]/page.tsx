@@ -12,7 +12,7 @@ export default function EventPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const { token, user } = useAuthStore()
-  const { event, tags, loading, fetchEvent, fetchTags } = useEventDetailStore()
+  const { event, tags, loading, fetchEvent, fetchTags, clearAllTags } = useEventDetailStore()
   const [currentTime, setCurrentTime] = useState(0)
   const playerRef = useRef<VideoPlayerHandle>(null)
 
@@ -99,7 +99,7 @@ export default function EventPage() {
 
         {/* Right: Tag list */}
         <aside className="w-80 xl:w-96 flex-shrink-0 border-l border-gray-800 bg-gray-900 flex flex-col overflow-hidden">
-          <TagList tags={tags} onSeek={handleSeek} />
+          <TagList tags={tags} onSeek={handleSeek} onClearAll={() => clearAllTags(token!)} />
         </aside>
       </div>
     </main>
