@@ -7,23 +7,32 @@ import { useAuthStore } from '@/store/auth'
 import { useEventDetailStore } from '@/store/eventDetail'
 import { apiFetch, formatTime, cn } from '@/lib/utils'
 
-// Sport-specific tag sets
+// Sport definitions
+const SPORTS = [
+  { key: 'SOCCER',     label: '⚽ Soccer'     },
+  { key: 'HOCKEY',     label: '🏒 Hockey'     },
+  { key: 'RUGBY',      label: '🏉 Rugby'      },
+  { key: 'FOOTBALL',   label: '🏈 Football'   },
+  { key: 'BASKETBALL', label: '🏀 Basketball' },
+  { key: 'GENERIC',    label: '📋 Generic'    },
+]
+
 const TAG_SETS: Record<string, string[]> = {
-  SOCCER: ['GOAL', 'SHOT ON TARGET', 'SHOT OFF TARGET', 'SAVE', 'CORNER', 'FREE KICK', 'OFFSIDE', 'FOUL', 'YELLOW CARD', 'RED CARD', 'SUBSTITUTION', 'KEY PASS', 'TACKLE', 'INTERCEPTION', 'PENALTY'],
-  FOOTBALL: ['TOUCHDOWN', 'FIELD GOAL', 'INTERCEPTION', 'SACK', 'FUMBLE', 'PUNT', 'KICKOFF', 'PENALTY', '1ST DOWN', 'RED ZONE', 'KEY PLAY', 'TURNOVER'],
-  HOCKEY: ['GOAL', 'SHOT', 'SAVE', 'PENALTY', 'POWER PLAY', 'SHORT HANDED', 'FACE OFF', 'ICING', 'OFFSIDE', 'FIGHT', 'TURNOVER', 'KEY PLAY'],
-  RUGBY: ['TRY', 'CONVERSION', 'PENALTY GOAL', 'DROP GOAL', 'TACKLE', 'LINEOUT', 'SCRUM', 'KNOCK ON', 'PENALTY', 'KEY PLAY', 'TURNOVER'],
+  SOCCER:     ['GOAL', 'SHOT ON TARGET', 'SHOT OFF TARGET', 'SAVE', 'CORNER', 'FREE KICK', 'OFFSIDE', 'FOUL', 'YELLOW CARD', 'RED CARD', 'SUBSTITUTION', 'KEY PASS', 'TACKLE', 'INTERCEPTION', 'PENALTY'],
+  FOOTBALL:   ['TOUCHDOWN', 'FIELD GOAL', 'INTERCEPTION', 'SACK', 'FUMBLE', 'PUNT', 'KICKOFF', 'PENALTY', '1ST DOWN', 'RED ZONE', 'KEY PLAY', 'TURNOVER'],
+  HOCKEY:     ['GOAL', 'SHOT', 'SAVE', 'PENALTY', 'POWER PLAY', 'SHORT HANDED', 'FACE OFF', 'ICING', 'OFFSIDE', 'FIGHT', 'TURNOVER', 'KEY PLAY'],
+  RUGBY:      ['TRY', 'CONVERSION', 'PENALTY GOAL', 'DROP GOAL', 'TACKLE', 'LINEOUT', 'SCRUM', 'KNOCK ON', 'PENALTY', 'KEY PLAY', 'TURNOVER'],
   BASKETBALL: ['BASKET', '3 POINTER', 'FREE THROW', 'REBOUND', 'ASSIST', 'STEAL', 'BLOCK', 'TURNOVER', 'FOUL', 'TIMEOUT', 'FAST BREAK', 'KEY PLAY'],
-  GENERIC: ['KEY MOMENT', 'HIGHLIGHT', 'REVIEW', 'GOOD', 'BAD', 'TRAINING POINT', 'TACTIC', 'NOTE'],
+  GENERIC:    ['KEY MOMENT', 'HIGHLIGHT', 'REVIEW', 'GOOD', 'BAD', 'TRAINING POINT', 'TACTIC', 'NOTE'],
 }
 
 const PERIODS: Record<string, string[]> = {
-  SOCCER: ['1st Half', '2nd Half', 'Extra Time 1', 'Extra Time 2', 'Penalties'],
-  FOOTBALL: ['Q1', 'Q2', 'Q3', 'Q4', 'OT'],
-  HOCKEY: ['P1', 'P2', 'P3', 'OT'],
-  RUGBY: ['1st Half', '2nd Half', 'Extra Time'],
+  SOCCER:     ['1H', '2H', 'ET1', 'ET2', 'P'],
+  FOOTBALL:   ['Q1', 'Q2', 'Q3', 'Q4', 'OT'],
+  HOCKEY:     ['P1', 'P2', 'P3', 'OT1', 'OT2', 'P'],
+  RUGBY:      ['1H', '2H', 'ET1', 'ET2', 'SD'],
   BASKETBALL: ['Q1', 'Q2', 'Q3', 'Q4', 'OT'],
-  GENERIC: ['Period 1', 'Period 2', 'Period 3'],
+  GENERIC:    ['P1', 'P2', 'P3'],
 }
 
 const TAG_COLOURS = [
@@ -49,9 +58,11 @@ export function TaggerPanel({ event, token, currentTime }: TaggerPanelProps) {
   const { user } = useAuthStore()
   const addTag = useEventDetailStore((s) => s.addTag)
 
-  const sportType = (event.sportType ?? 'GENERIC') as string
-  const tagNames = TAG_SETS[sportType] ?? TAG_SETS.GENERIC
-  const periods = PERIODS[sportType] ?? PERIODS.GENERIC
+  const defaultSport = (event.sportType ?? 'GENERIC') as string
+  const [activeSport, setActiveSport] = useState(defaultSport)
+
+  const tagNames = TAG_SETS[activeSport] ?? TAG_SETS.GENERIC
+  const periods   = PERIODS[activeSport]  ?? PERIODS.GENERIC
 
   const [activeColour, setActiveColour] = useState(user?.colour ?? TAG_COLOURS[0].value)
   const [activePeriod, setActivePeriod] = useState(periods[0])
@@ -62,6 +73,11 @@ export function TaggerPanel({ event, token, currentTime }: TaggerPanelProps) {
   const [tagging, setTagging] = useState<string | null>(null)
   const [lastTagged, setLastTagged] = useState<string | null>(null)
   const [showPlayerPicker, setShowPlayerPicker] = useState(false)
+
+  function handleSportChange(sport: string) {
+    setActiveSport(sport)
+    setActivePeriod(PERIODS[sport]?.[0] ?? 'P1')
+  }
 
   function togglePlayer(p: string) {
     setSelectedPlayers((prev) => prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p])
@@ -102,6 +118,20 @@ export function TaggerPanel({ event, token, currentTime }: TaggerPanelProps) {
     <div className="flex flex-col bg-gray-900 border-t border-gray-800">
       {/* Controls row */}
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2.5 border-b border-gray-800">
+
+        {/* Sport picker */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-gray-500 font-medium whitespace-nowrap">Sport:</span>
+          <select
+            value={activeSport}
+            onChange={(e) => handleSportChange(e.target.value)}
+            className="bg-gray-800 border border-gray-700 text-white text-xs rounded px-2 py-1 focus:border-brand-500 focus:outline-none cursor-pointer"
+          >
+            {SPORTS.map((s) => (
+              <option key={s.key} value={s.key}>{s.label}</option>
+            ))}
+          </select>
+        </div>
 
         {/* Period selector */}
         <div className="flex items-center gap-1.5">
