@@ -135,16 +135,23 @@ function TagItem({ tag, expanded, onToggle, onSeek }: {
   onToggle: () => void
   onSeek?: (time: number) => void
 }) {
+  function handleRowClick() {
+    // Single click: seek video to tag time
+    onSeek?.(tag.time)
+    // Also expand for detail
+    onToggle()
+  }
+
   return (
     <div
       className={cn(
-        'border-b border-gray-800 transition-colors',
-        expanded ? 'bg-gray-800/60' : 'hover:bg-gray-800/30'
+        'border-b border-gray-800 transition-colors cursor-pointer',
+        expanded ? 'bg-gray-800/60' : 'hover:bg-gray-800/40'
       )}
     >
       <div
-        className="flex items-start gap-2.5 px-3 py-2.5 cursor-pointer"
-        onClick={onToggle}
+        className="flex items-start gap-2.5 px-3 py-2.5"
+        onClick={handleRowClick}
       >
         {/* Colour dot */}
         <div

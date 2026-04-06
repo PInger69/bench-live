@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/auth'
 import { useEventDetailStore } from '@/store/eventDetail'
-import { VideoPlayer } from '@/components/player/VideoPlayer'
+import { VideoPlayer, type VideoPlayerHandle } from '@/components/player/VideoPlayer'
 import { TaggerPanel } from '@/components/tagger/TaggerPanel'
 import { TagList } from '@/components/tagger/TagList'
 
@@ -14,6 +14,12 @@ export default function EventPage() {
   const { token, user } = useAuthStore()
   const { event, tags, loading, fetchEvent, fetchTags } = useEventDetailStore()
   const [currentTime, setCurrentTime] = useState(0)
+  const playerRef = useRef<VideoPlayerHandle>(null)
+
+  // Seek the actual video element
+  function handleSeek(time: number) {
+    playerRef.current?.seekTo(time)
+  }
 
   useEffect(() => {
     if (!token) { router.push('/login'); return }
@@ -66,7 +72,10 @@ export default function EventPage() {
               {event.status}
             </span>
           )}
-          <div className="h-7 w-7 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: user?.colour ?? '#6366F1' }}>
+          <div
+            className="h-7 w-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
+            style={{ background: user?.colour ?? '#6366F1' }}
+          >
             {user?.name?.[0] ?? '?'}
           </div>
         </div>
@@ -76,12 +85,13 @@ export default function EventPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* Left: Video + Tagger */}
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-          {/* Video */}
           <div className="flex-shrink-0 bg-black" style={{ aspectRatio: '16/9', maxHeight: 'calc(100vh - 280px)' }}>
-            <VideoPlayer feed={primaryFeed} onTimeUpdate={setCurrentTime} />
+            <VideoPlayer
+              ref={playerRef}
+              feed={primaryFeed}
+              onTimeUpdate={setCurrentTime}
+            />
           </div>
-
-          {/* Tagger panel */}
           <div className="flex-1 overflow-y-auto min-h-0">
             <TaggerPanel event={event} token={token!} currentTime={currentTime} />
           </div>
@@ -89,7 +99,7 @@ export default function EventPage() {
 
         {/* Right: Tag list */}
         <aside className="w-80 xl:w-96 flex-shrink-0 border-l border-gray-800 bg-gray-900 flex flex-col overflow-hidden">
-          <TagList tags={tags} onSeek={setCurrentTime} />
+          <TagList tags={tags} onSeek={handleSeek} />
         </aside>
       </div>
     </main>
