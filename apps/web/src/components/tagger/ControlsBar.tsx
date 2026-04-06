@@ -30,23 +30,15 @@ export const TAG_SETS: Record<string, string[]> = {
   GENERIC:    ['KEY MOMENT', 'HIGHLIGHT', 'REVIEW', 'GOOD', 'BAD', 'TRAINING POINT', 'TACTIC', 'NOTE'],
 }
 
-/** Palette used for the timeline colour filter toggles */
 export const FILTER_PALETTE = [
-  '#EF4444', // Red
-  '#F97316', // Orange
-  '#F59E0B', // Amber
-  '#10B981', // Green
-  '#14B8A6', // Teal
-  '#3B82F6', // Blue
-  '#6366F1', // Indigo
-  '#8B5CF6', // Purple
-  '#EC4899', // Pink
-  '#6B7280', // Gray
+  '#EF4444', '#F97316', '#F59E0B', '#10B981',
+  '#14B8A6', '#3B82F6', '#6366F1', '#8B5CF6',
+  '#EC4899', '#6B7280',
 ]
 
 export const DEMO_PLAYERS = [
-  '#1', '#2', '#3', '#4', '#5', '#6', '#7', '#8', '#9', '#10', '#11',
-  '#12', '#13', '#14', '#15', '#16', '#17', '#18', '#19', '#20',
+  '#1','#2','#3','#4','#5','#6','#7','#8','#9','#10','#11',
+  '#12','#13','#14','#15','#16','#17','#18','#19','#20',
 ]
 
 interface ControlsBarProps {
@@ -59,7 +51,6 @@ interface ControlsBarProps {
   onPlayersChange: (players: string[]) => void
   onRatingChange: (rating: number) => void
   onCoachPickChange: (v: boolean) => void
-  /** Currently active colour filters (empty = show all) */
   activeColours: string[]
   onColourFilterChange: (colours: string[]) => void
   activeSport: string
@@ -93,45 +84,49 @@ export function ControlsBar({
     }
   }
 
-  return (
-    <div className="flex-shrink-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
-      {/* Row 1: Sport | Period | Colour filters | Players | Rating | Coach Pick | Time */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-3 py-2 border-b border-gray-100 dark:border-gray-800/60">
+  // Shared button base using CSS tokens (no dark: prefix needed)
+  const chipCls = 'px-2.5 py-1.5 rounded-lg text-xs font-bold touch-manipulation transition-colors min-w-[36px]'
 
-        {/* Sport picker */}
+  return (
+    <div
+      className="flex-shrink-0 border-t border-theme"
+      style={{ background: 'var(--c-surface)' }}
+    >
+      {/* Row 1 */}
+      <div
+        className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-3 py-2 border-b border-theme"
+      >
+        {/* Sport */}
         <select
           value={activeSport}
           onChange={(e) => onSportChange(e.target.value)}
-          className="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white text-xs rounded-lg px-2 py-1.5 touch-manipulation focus:outline-none focus:border-brand-500"
+          className="rounded-lg text-xs px-2 py-1.5 touch-manipulation focus:outline-none focus:ring-1 focus:ring-brand-500 border border-theme"
+          style={{ background: 'var(--c-surf2)', color: 'var(--c-text1)' }}
         >
           {SPORTS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
         </select>
 
-        {/* Period buttons */}
+        {/* Period */}
         <div className="flex items-center gap-1">
           {periods.map((p) => (
             <button
               key={p}
               onClick={() => onPeriodChange(p)}
-              className={cn(
-                'px-2.5 py-1.5 rounded-lg text-xs font-bold touch-manipulation transition-colors min-w-[36px]',
-                activePeriod === p
-                  ? 'bg-brand-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-              )}
+              className={cn(chipCls, activePeriod === p ? 'bg-brand-600 text-white' : '')}
+              style={activePeriod !== p ? { background: 'var(--c-surf2)', color: 'var(--c-text2)' } : {}}
             >
               {p}
             </button>
           ))}
         </div>
 
-        {/* Colour filter toggles */}
+        {/* Colour filter dots */}
         <div className="flex items-center gap-1">
           {activeColours.length > 0 && (
             <button
               onClick={() => onColourFilterChange([])}
-              className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors px-1.5 py-1 rounded"
-              title="Clear colour filter"
+              className="text-xs px-1.5 py-1 rounded touch-manipulation transition-colors"
+              style={{ color: 'var(--c-text3)' }}
             >
               All
             </button>
@@ -142,14 +137,16 @@ export function ControlsBar({
               <button
                 key={colour}
                 onClick={() => toggleColourFilter(colour)}
-                title={active ? 'Remove filter' : 'Filter to this colour'}
+                title={active ? 'Remove filter' : 'Filter'}
                 className={cn(
                   'h-6 w-6 rounded-full touch-manipulation transition-all duration-150 flex-shrink-0',
-                  active
-                    ? 'ring-2 ring-gray-900 dark:ring-white ring-offset-1 ring-offset-white dark:ring-offset-gray-900 scale-110 opacity-100'
-                    : 'opacity-35 hover:opacity-70 active:scale-95'
+                  active ? 'scale-110 opacity-100' : 'opacity-35 hover:opacity-70 active:scale-95'
                 )}
-                style={{ background: colour }}
+                style={{
+                  background: colour,
+                  outline: active ? `2px solid var(--c-text1)` : undefined,
+                  outlineOffset: active ? '2px' : undefined,
+                }}
               />
             )
           })}
@@ -159,28 +156,31 @@ export function ControlsBar({
         <div className="relative">
           <button
             onClick={() => setShowPlayers(!showPlayers)}
-            className={cn(
-              'px-3 py-1.5 rounded-lg text-xs font-semibold touch-manipulation transition-colors',
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold touch-manipulation transition-colors"
+            style={
               selectedPlayers.length > 0
-                ? 'bg-brand-600 text-white'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-            )}
+                ? { background: '#2563EB', color: '#fff' }
+                : { background: 'var(--c-surf2)', color: 'var(--c-text2)' }
+            }
           >
             Players {selectedPlayers.length > 0 && `(${selectedPlayers.length})`}
           </button>
           {showPlayers && (
-            <div className="absolute bottom-full mb-2 left-0 z-50 bg-white dark:bg-gray-800 rounded-xl shadow-2xl ring-1 ring-gray-200 dark:ring-gray-700 p-3 w-64">
+            <div
+              className="absolute bottom-full mb-2 left-0 z-50 rounded-xl shadow-2xl border border-theme p-3 w-64"
+              style={{ background: 'var(--c-surface)' }}
+            >
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {DEMO_PLAYERS.map((p) => (
                   <button
                     key={p}
                     onClick={() => togglePlayer(p)}
-                    className={cn(
-                      'px-2.5 py-1.5 rounded-lg text-xs font-medium touch-manipulation min-w-[40px]',
+                    className="px-2.5 py-1.5 rounded-lg text-xs font-medium touch-manipulation min-w-[40px]"
+                    style={
                       selectedPlayers.includes(p)
-                        ? 'bg-brand-600 text-white'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                    )}
+                        ? { background: '#2563EB', color: '#fff' }
+                        : { background: 'var(--c-surf2)', color: 'var(--c-text1)' }
+                    }
                   >
                     {p}
                   </button>
@@ -189,14 +189,12 @@ export function ControlsBar({
               <div className="flex justify-between">
                 <button
                   onClick={() => onPlayersChange([])}
-                  className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                  className="text-xs"
+                  style={{ color: 'var(--c-text3)' }}
                 >
                   Clear
                 </button>
-                <button
-                  onClick={() => setShowPlayers(false)}
-                  className="text-xs text-brand-600 dark:text-brand-400"
-                >
+                <button onClick={() => setShowPlayers(false)} className="text-xs text-brand-600">
                   Done
                 </button>
               </div>
@@ -204,16 +202,14 @@ export function ControlsBar({
           )}
         </div>
 
-        {/* Rating stars */}
+        {/* Rating */}
         <div className="flex items-center gap-0.5">
-          {[1, 2, 3, 4, 5].map((s) => (
+          {[1,2,3,4,5].map((s) => (
             <button
               key={s}
               onClick={() => onRatingChange(rating === s ? 0 : s)}
-              className={cn(
-                'text-xl touch-manipulation transition-colors',
-                s <= rating ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-700'
-              )}
+              className="text-xl touch-manipulation transition-colors"
+              style={{ color: s <= rating ? '#facc15' : 'var(--c-surf3)' }}
             >
               ★
             </button>
@@ -223,22 +219,22 @@ export function ControlsBar({
         {/* Coach Pick */}
         <button
           onClick={() => onCoachPickChange(!coachPick)}
-          className={cn(
-            'px-3 py-1.5 rounded-lg text-xs font-semibold touch-manipulation transition-colors',
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold touch-manipulation transition-colors"
+          style={
             coachPick
-              ? 'bg-yellow-500/25 text-yellow-600 dark:text-yellow-400 ring-1 ring-yellow-500/50'
-              : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-500'
-          )}
+              ? { background: 'rgba(234,179,8,0.2)', color: '#ca8a04', outline: '1px solid rgba(234,179,8,0.4)' }
+              : { background: 'var(--c-surf2)', color: 'var(--c-text3)' }
+          }
         >
           ★ Pick
         </button>
 
-        {/* Time + last tagged */}
+        {/* Time */}
         <div className="ml-auto flex items-center gap-3">
           {lastTagged && (
             <span className="text-xs text-green-600 dark:text-green-400 font-medium">✓ {lastTagged}</span>
           )}
-          <span className="text-xs text-gray-400 dark:text-gray-500 font-mono">{formatTime(currentTime)}</span>
+          <span className="text-xs font-mono text-theme3">{formatTime(currentTime)}</span>
         </div>
       </div>
 
@@ -249,7 +245,11 @@ export function ControlsBar({
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder="Add a comment to the next tag (optional)..."
-          className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-brand-500 focus:outline-none touch-manipulation"
+          className="w-full rounded-xl px-3 py-2 text-sm border border-theme focus:border-brand-500 focus:outline-none touch-manipulation"
+          style={{
+            background: 'var(--c-surf2)',
+            color: 'var(--c-text1)',
+          }}
         />
       </div>
     </div>

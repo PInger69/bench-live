@@ -3,31 +3,79 @@
 @tailwind utilities;
 
 @layer base {
-  /* ── Theme-aware CSS custom properties ──────────────────────────────────── */
+  /* ── Semantic colour tokens — swap automatically with .dark class ─────── */
   :root {
-    /* Tag button backgrounds (computed with color-mix) */
-    --tag-btn-pct:    8%;       /* tint strength in light mode */
-    --tag-btn-base:   #f9fafb;  /* gray-50 */
+    /* Surfaces */
+    --c-bg:       #f9fafb;   /* gray-50  */
+    --c-surface:  #ffffff;   /* white    */
+    --c-surf2:    #f3f4f6;   /* gray-100 */
+    --c-surf3:    #e5e7eb;   /* gray-200 */
+
+    /* Borders */
+    --c-border:   #e5e7eb;   /* gray-200 */
+    --c-border2:  #d1d5db;   /* gray-300 */
+
+    /* Text */
+    --c-text1:    #111827;   /* gray-900 */
+    --c-text2:    #6b7280;   /* gray-500 */
+    --c-text3:    #9ca3af;   /* gray-400 */
+
+    /* Tag button color-mix */
+    --tag-btn-pct:    8%;
+    --tag-btn-base:   #f9fafb;
     --tag-active-pct: 18%;
   }
 
   .dark {
+    /* Surfaces */
+    --c-bg:       #030712;   /* gray-950 */
+    --c-surface:  #111827;   /* gray-900 */
+    --c-surf2:    #1f2937;   /* gray-800 */
+    --c-surf3:    #374151;   /* gray-700 */
+
+    /* Borders */
+    --c-border:   #1f2937;   /* gray-800 */
+    --c-border2:  #374151;   /* gray-700 */
+
+    /* Text */
+    --c-text1:    #f9fafb;   /* gray-50  */
+    --c-text2:    #9ca3af;   /* gray-400 */
+    --c-text3:    #6b7280;   /* gray-500 */
+
+    /* Tag button color-mix */
     --tag-btn-pct:    12%;
-    --tag-btn-base:   #111827;  /* gray-900 */
+    --tag-btn-base:   #111827;
     --tag-active-pct: 28%;
   }
 
-  * {
-    @apply border-gray-200 dark:border-gray-800;
+  /* Apply tokens to root elements so the whole page responds to theme
+     even before any Tailwind dark: class is applied */
+  html {
+    background-color: var(--c-bg);
+    color: var(--c-text1);
   }
 
   body {
-    @apply bg-gray-50 text-gray-900 antialiased
-           dark:bg-gray-950 dark:text-gray-100;
+    @apply antialiased;
+    background-color: var(--c-bg);
+    color: var(--c-text1);
   }
 }
 
-/* Video player container */
+/* Convenience utilities that use our tokens — available everywhere */
+@layer utilities {
+  .bg-theme-bg      { background-color: var(--c-bg);      }
+  .bg-theme-surface { background-color: var(--c-surface);  }
+  .bg-theme-surf2   { background-color: var(--c-surf2);    }
+  .bg-theme-surf3   { background-color: var(--c-surf3);    }
+  .border-theme     { border-color:     var(--c-border);   }
+  .border-theme2    { border-color:     var(--c-border2);  }
+  .text-theme1      { color: var(--c-text1); }
+  .text-theme2      { color: var(--c-text2); }
+  .text-theme3      { color: var(--c-text3); }
+}
+
+/* Video player */
 .video-container {
   position: relative;
   width: 100%;
@@ -36,12 +84,9 @@
   overflow: hidden;
 }
 
-/* Tag button pulse animation for live events */
+/* LIVE badge pulse */
 @keyframes tag-pulse {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.6; }
 }
-
-.tag-live {
-  animation: tag-pulse 1.5s ease-in-out infinite;
-}
+.tag-live { animation: tag-pulse 1.5s ease-in-out infinite; }

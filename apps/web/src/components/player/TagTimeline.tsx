@@ -9,38 +9,23 @@ interface TagTimelineProps {
   currentTime: number
   duration: number
   onSeek: (time: number) => void
-  /** When non-empty, only ticks whose resolved colour is in this list are shown */
   activeColours?: string[]
-  /**
-   * Colour resolver — called with tag.name to get the *current* user-assigned
-   * colour. Falls back to tag.colour (baked-in at creation time) when undefined.
-   */
   getColour?: (name: string) => string | undefined
 }
 
 export function TagTimeline({
-  tags,
-  currentTime,
-  duration,
-  onSeek,
-  activeColours = [],
-  getColour,
+  tags, currentTime, duration, onSeek,
+  activeColours = [], getColour,
 }: TagTimelineProps) {
   const barRef = useRef<HTMLDivElement>(null)
   const [hoveredTag, setHoveredTag] = useState<Tag | null>(null)
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
 
-  /**
-   * Resolve the display colour for a tag:
-   *   1. Current user setting for this tag name  (live, from settings drawer)
-   *   2. The colour stored in the DB at creation time  (fallback)
-   */
   function resolveColour(tag: Tag): string {
     return (getColour ? getColour(tag.name) : undefined) ?? tag.colour
   }
 
-  // Apply colour filter using the *resolved* (live) colour
   const visibleTags = activeColours.length > 0
     ? tags.filter((t) => activeColours.includes(resolveColour(t)))
     : tags
@@ -54,9 +39,12 @@ export function TagTimeline({
   }
 
   return (
-    <div className="px-3 py-2 bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 select-none">
+    <div
+      className="px-3 py-2 select-none border-t border-theme"
+      style={{ background: 'var(--c-bg)' }}
+    >
       {/* Time labels */}
-      <div className="flex justify-between text-xs text-gray-400 dark:text-gray-600 font-mono mb-1 px-0.5">
+      <div className="flex justify-between text-xs font-mono mb-1 px-0.5 text-theme3">
         <span>{formatTime(currentTime)}</span>
         <span>{duration > 0 ? formatTime(duration) : '--:--'}</span>
       </div>
@@ -69,15 +57,18 @@ export function TagTimeline({
         onTouchStart={handleBarClick}
       >
         {/* Track */}
-        <div className="absolute inset-y-0 my-auto h-1.5 w-full rounded-full bg-gray-200 dark:bg-gray-800" />
+        <div
+          className="absolute inset-y-0 my-auto h-1.5 w-full rounded-full"
+          style={{ background: 'var(--c-surf3)' }}
+        />
 
         {/* Played portion */}
         <div
-          className="absolute inset-y-0 my-auto h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 transition-none"
-          style={{ width: `${progress}%` }}
+          className="absolute inset-y-0 my-auto h-1.5 rounded-full transition-none"
+          style={{ width: `${progress}%`, background: 'var(--c-text3)' }}
         />
 
-        {/* Tag tick marks — colour resolved live from current settings */}
+        {/* Tick marks */}
         {duration > 0 && visibleTags.map((tag) => {
           const pct    = (tag.time / duration) * 100
           const colour = resolveColour(tag)
@@ -100,24 +91,33 @@ export function TagTimeline({
 
         {/* Playhead */}
         <div
-          className="absolute top-0 bottom-0 w-0.5 -translate-x-px bg-gray-800 dark:bg-white shadow-lg pointer-events-none"
-          style={{ left: `${progress}%` }}
+          className="absolute top-0 bottom-0 w-0.5 -translate-x-px shadow-lg pointer-events-none"
+          style={{ left: `${progress}%`, background: 'var(--c-text1)' }}
         >
-          <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-3.5 w-3.5 rounded-full bg-gray-800 dark:bg-white shadow" />
+          <div
+            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-3.5 w-3.5 rounded-full shadow"
+            style={{ background: 'var(--c-text1)' }}
+          />
         </div>
 
-        {/* Tooltip — also uses live colour */}
+        {/* Tooltip */}
         {hoveredTag && duration > 0 && (
           <div
-            className="absolute bottom-full mb-2 -translate-x-1/2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs rounded px-2 py-1 whitespace-nowrap pointer-events-none shadow-lg ring-1 ring-gray-200 dark:ring-gray-700 z-50"
-            style={{ left: `${(hoveredTag.time / duration) * 100}%` }}
+            className="absolute bottom-full mb-2 -translate-x-1/2 text-xs rounded px-2 py-1 whitespace-nowrap pointer-events-none shadow-lg z-50 border border-theme"
+            style={{
+              left: `${(hoveredTag.time / duration) * 100}%`,
+              background: 'var(--c-surface)',
+              color: 'var(--c-text1)',
+            }}
           >
             <div className="flex items-center gap-1.5">
               <div className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: resolveColour(hoveredTag) }} />
               <span className="font-medium">{hoveredTag.name}</span>
-              <span className="text-gray-500 dark:text-gray-400">{formatTime(hoveredTag.time)}</span>
+              <span style={{ color: 'var(--c-text2)' }}>{formatTime(hoveredTag.time)}</span>
             </div>
-            {hoveredTag.period && <div className="text-gray-400 dark:text-gray-500 text-xs">{hoveredTag.period}</div>}
+            {hoveredTag.period && (
+              <div style={{ color: 'var(--c-text3)' }} className="text-xs">{hoveredTag.period}</div>
+            )}
           </div>
         )}
       </div>
@@ -125,13 +125,11 @@ export function TagTimeline({
       {/* Filter indicator */}
       {activeColours.length > 0 && (
         <div className="flex items-center gap-1.5 mt-1 px-0.5">
-          <span className="text-xs text-gray-400 dark:text-gray-600">Showing</span>
+          <span className="text-xs text-theme3">Showing</span>
           {activeColours.map((c) => (
             <span key={c} className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: c }} />
           ))}
-          <span className="text-xs text-gray-400 dark:text-gray-600">
-            ({visibleTags.length} of {tags.length})
-          </span>
+          <span className="text-xs text-theme3">({visibleTags.length} of {tags.length})</span>
         </div>
       )}
     </div>
