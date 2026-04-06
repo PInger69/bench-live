@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPERUSER
+  COACH
+  PLAYER
+  USER
+  TEAM_ADMIN
+  MEDICAL
+}
+
+enum SportType {
+  SOCCER
+  FOOTBALL
+  HOCKEY
+  RUGBY
+  BASKETBALL
+  GENERIC
+}
+
+enum EventStatus {
+  LIVE
+  RECORDED
+  ARCHIVED
+}
+
+enum TagType {
+  NORMAL
+  DURATION_OPEN
+  DURATION_CLOSE
+  TELESTRATION
+  GAME_START
+  GAME_END
+  HOCKEY_LINE_ON
+  HOCKEY_LINE_OFF
+  HOCKEY_PERIOD_START
+  HOCKEY_PERIOD_END
+  SOCCER_HALF_START
+  SOCCER_HALF_END
+  SOCCER_ZONE_START
+  SOCCER_ZONE_END
+  FOOTBALL_DOWN_START
+  FOOTBALL_DOWN_END
+  FOOTBALL_QUARTER_START
+  FOOTBALL_QUARTER_END
+}
+
+model Organisation {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  teams  Team[]
+  users  User[]
+  events Event[]
+}
+
+model Team {
+  id             String       @id @default(cuid())
+  name           String
+  shortName      String
+  colour         String       @default("#3B82F6")
+  organisationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organisation Organisation @relation(fields: [organisationId], references: [id])
+  users        User[]
+  homeEvents   Event[]      @relation("HomeTeam")
+  visitEvents  Event[]      @relation("VisitTeam")
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  passwordHash   String
+  name           String
+  role           UserRole @default(USER)
+  colour         String   @default("#6366F1")
+  teamId         String?
+  organisationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  team         Team?        @relation(fields: [teamId], references: [id])
+  organisation Organisation @relation(fields: [organisationId], references: [id])
+  tags         Tag[]
+  clips        Clip[]
+
+  @@index([email])
+  @@index([organisationId])
+}
+
+model Event {
+  id             String      @id @default(cuid())
+  name           String
+  sportType      SportType   @default(GENERIC)
+  status         EventStatus @default(RECORDED)
+  date           DateTime
+  homeTeamId     String?
+  visitTeamId    String?
+  organisationId String
+  encoderRef     String?     // reference to external encoder ID
+  metadata       Json        @default("{}")
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  organisation Organisation @relation(fields: [organisationId], references: [id])
+  homeTeam     Team?        @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  visitTeam    Team?        @relation("VisitTeam", fields: [visitTeamId], references: [id])
+  feeds        Feed[]
+  tags         Tag[]
+  clips        Clip[]
+
+  @@index([organisationId])
+  @@index([status])
+  @@index([date])
+}
+
+model Feed {
+  id         String  @id @default(cuid())
+  eventId    String
+  sourceName String  // e.g. "s_00", "s_01"
+  label      String  // e.g. "Main Camera", "End Zone"
+  hlsUrl     String?
+  mp4Url     String?
+  quality    String  @default("HQ") // HQ or LQ
+  isActive   Boolean @default(true)
+  offset     Int     @default(0) // frame offset in ms
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+}
+
+model Tag {
+  id          String   @id @default(cuid())
+  eventId     String
+  userId      String
+  type        TagType  @default(NORMAL)
+  name        String
+  time        Float    // video timestamp in seconds
+  duration    Int      @default(30) // clip length in seconds
+  startTime   Float?   // for duration tags
+  closeTime   Float?   // for duration tags
+  durationId  String?  // links open/close duration tag pairs
+  colour      String   @default("#3B82F6")
+  comment     String?
+  rating      Int?     // 1-5
+  coachPick   Boolean  @default(false)
+  period      String?
+  players     String[] @default([])
+  extraData   Json     @default("{}")
+  telestration Json?
+  thumbnails  Json     @default("{}")
+  synced      Boolean  @default(true)
+  deleted     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@index([eventId])
+  @@index([userId])
+  @@index([type])
+  @@index([deleted])
+}
+
+model Clip {
+  id        String   @id @default(cuid())
+  eventId   String
+  userId    String
+  tagId     String?  // source tag
+  name      String
+  startTime Float
+  endTime   Float
+  sources   Json     @default("{}") // sourceKey -> local file path
+  metadata  Json     @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@index([eventId])
+  @@index([userId])
+}
