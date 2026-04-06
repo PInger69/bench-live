@@ -10,10 +10,11 @@ export interface VideoPlayerHandle {
 interface VideoPlayerProps {
   feed: Feed | null
   onTimeUpdate?: (time: number) => void
+  onDurationChange?: (duration: number) => void
 }
 
 export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
-  function VideoPlayer({ feed, onTimeUpdate }, ref) {
+  function VideoPlayer({ feed, onTimeUpdate, onDurationChange }, ref) {
     const videoRef = useRef<HTMLVideoElement>(null)
     const hlsRef = useRef<unknown>(null)
 
@@ -67,11 +68,18 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
     useEffect(() => {
       const video = videoRef.current
-      if (!video || !onTimeUpdate) return
-      const handler = () => onTimeUpdate(video.currentTime)
-      video.addEventListener('timeupdate', handler)
-      return () => video.removeEventListener('timeupdate', handler)
-    }, [onTimeUpdate])
+      if (!video) return
+      const onTime = () => onTimeUpdate?.(video.currentTime)
+      const onDuration = () => onDurationChange?.(video.duration)
+      video.addEventListener('timeupdate', onTime)
+      video.addEventListener('durationchange', onDuration)
+      video.addEventListener('loadedmetadata', onDuration)
+      return () => {
+        video.removeEventListener('timeupdate', onTime)
+        video.removeEventListener('durationchange', onDuration)
+        video.removeEventListener('loadedmetadata', onDuration)
+      }
+    }, [onTimeUpdate, onDurationChange])
 
     if (!feed) {
       return (
