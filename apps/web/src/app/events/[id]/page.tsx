@@ -28,6 +28,28 @@ export default function EventPage() {
   // Per-tag colour map + custom names
   const { getColour, setColour, colourMap, getName, setName, nameMap, resetAll } = useTagColours()
 
+  /**
+   * Resolve the current colour for a tag given its stored display name.
+   *
+   * The colour map is keyed by canonical TAG_SETS keys (e.g. "GOAL"), but
+   * tag.name in the DB is the display name at creation time (e.g. "GOAL GREAT").
+   * We walk all TAG_SETS keys to find which one's display name matches, then
+   * look up the colour by canonical key so renaming never breaks colour lookups.
+   *
+   * Falls back to `undefined` so TagTimeline can use tag.colour from the DB.
+   */
+  const getColourByName = useCallback((tagName: string): string | undefined => {
+    for (const keys of Object.values(TAG_SETS)) {
+      for (const key of keys) {
+        if (getName(key) === tagName || key === tagName) {
+          return getColour(key)
+        }
+      }
+    }
+    // Direct lookup as last resort (e.g. tag from another sport)
+    return colourMap[tagName]
+  }, [getName, getColour, colourMap, nameMap]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Timeline colour filter (empty = show all)
   const [activeColours, setActiveColours] = useState<string[]>([])
 
@@ -203,15 +225,15 @@ export default function EventPage() {
             />
           </div>
 
-          {/* Tag timeline — colour resolved live so changing a tag colour
-               immediately updates all existing ticks of that name */}
+          {/* Tag timeline — getColourByName bridges display name → canonical key
+               → current colour setting, so all ticks update when colour changes */}
           <TagTimeline
             tags={tags}
             currentTime={currentTime}
             duration={duration}
             onSeek={handleSeek}
             activeColours={activeColours}
-            getColour={getColour}
+            getColour={getColourByName}
           />
 
           {/* Controls bar */}
