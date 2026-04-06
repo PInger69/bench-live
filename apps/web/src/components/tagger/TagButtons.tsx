@@ -19,13 +19,15 @@ export function TagButtons({ names, side, getColour, getName, disabled, tagging,
     <div
       className={cn(
         'flex flex-col gap-1.5 py-2 px-2 overflow-y-auto',
-        'bg-gray-950/80',
-        side === 'left' ? 'border-r border-gray-800/80' : 'border-l border-gray-800/80'
+        'bg-gray-50 dark:bg-gray-950',
+        side === 'left'
+          ? 'border-r border-gray-200 dark:border-gray-800'
+          : 'border-l border-gray-200 dark:border-gray-800'
       )}
       style={{ width: '158px', minWidth: '140px', maxWidth: '180px' }}
     >
       {names.map((name) => {
-        const colour = getColour(name)
+        const colour    = getColour(name)
         const isTagging = tagging === name
         const wasTagged = lastTagged === name
 
@@ -78,10 +80,12 @@ function TagButton({ name, label, colour, side, isTagging, wasTagged, disabled, 
         !disabled && 'active:scale-95',
       )}
       style={{
+        // CSS vars --tag-btn-pct and --tag-btn-base are set in globals.css
+        // per theme, so color-mix automatically adapts to light/dark mode.
         background: wasTagged
-          ? `${colour}30`
-          : `color-mix(in srgb, ${colour} 12%, #111827)`,
-        borderLeft: side === 'left' ? `3px solid ${colour}` : undefined,
+          ? `color-mix(in srgb, ${colour} var(--tag-active-pct), var(--tag-btn-base))`
+          : `color-mix(in srgb, ${colour} var(--tag-btn-pct), var(--tag-btn-base))`,
+        borderLeft:  side === 'left'  ? `3px solid ${colour}` : undefined,
         borderRight: side === 'right' ? `3px solid ${colour}` : undefined,
         boxShadow: wasTagged ? `inset 0 0 0 1px ${colour}60` : 'none',
       }}
@@ -89,7 +93,7 @@ function TagButton({ name, label, colour, side, isTagging, wasTagged, disabled, 
       {/* Flash overlay on tag */}
       {wasTagged && (
         <div
-          className="absolute inset-0 opacity-20 animate-ping rounded-inherit"
+          className="absolute inset-0 opacity-20 animate-ping"
           style={{ background: colour }}
         />
       )}
@@ -99,26 +103,27 @@ function TagButton({ name, label, colour, side, isTagging, wasTagged, disabled, 
         className={cn(
           'relative block text-xs font-bold leading-tight tracking-wide',
           side === 'left' ? 'text-right' : 'text-left',
-          wasTagged ? 'text-white' : 'text-gray-200',
+          wasTagged
+            ? 'text-gray-900 dark:text-white'
+            : 'text-gray-700 dark:text-gray-200',
         )}
-        style={{ textShadow: wasTagged ? `0 0 8px ${colour}` : undefined }}
+        style={{ textShadow: wasTagged ? `0 0 8px ${colour}80` : undefined }}
       >
         {isTagging ? (
           <span className="inline-flex gap-0.5 items-center">
-            <span className="h-1 w-1 rounded-full bg-white animate-bounce" style={{ animationDelay: '0ms' }} />
-            <span className="h-1 w-1 rounded-full bg-white animate-bounce" style={{ animationDelay: '150ms' }} />
-            <span className="h-1 w-1 rounded-full bg-white animate-bounce" style={{ animationDelay: '300ms' }} />
+            <span className="h-1 w-1 rounded-full bg-current animate-bounce" style={{ animationDelay: '0ms' }} />
+            <span className="h-1 w-1 rounded-full bg-current animate-bounce" style={{ animationDelay: '150ms' }} />
+            <span className="h-1 w-1 rounded-full bg-current animate-bounce" style={{ animationDelay: '300ms' }} />
           </span>
         ) : label}
       </span>
 
       {/* Colour indicator dot */}
       <span
-        className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full opacity-70"
+        className="absolute top-1.5 h-1.5 w-1.5 rounded-full opacity-70"
         style={{
           background: colour,
-          display: side === 'left' ? 'none' : 'block',
-          left: side === 'left' ? '6px' : undefined,
+          left:  side === 'left'  ? '6px' : undefined,
           right: side === 'right' ? '6px' : undefined,
         }}
       />

@@ -3,22 +3,27 @@
 @tailwind utilities;
 
 @layer base {
+  /* ── Theme-aware CSS custom properties ──────────────────────────────────── */
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Tag button backgrounds (computed with color-mix) */
+    --tag-btn-pct:    8%;       /* tint strength in light mode */
+    --tag-btn-base:   #f9fafb;  /* gray-50 */
+    --tag-active-pct: 18%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --tag-btn-pct:    12%;
+    --tag-btn-base:   #111827;  /* gray-900 */
+    --tag-active-pct: 28%;
   }
 
   * {
-    @apply border-gray-200;
+    @apply border-gray-200 dark:border-gray-800;
   }
 
   body {
-    @apply bg-gray-950 text-gray-100 antialiased;
+    @apply bg-gray-50 text-gray-900 antialiased
+           dark:bg-gray-950 dark:text-gray-100;
   }
 }
 
@@ -34,7 +39,7 @@
 /* Tag button pulse animation for live events */
 @keyframes tag-pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+  50%       { opacity: 0.6; }
 }
 
 .tag-live {

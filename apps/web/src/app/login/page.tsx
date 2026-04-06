@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/auth'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -16,7 +17,6 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
-
     try {
       await login(email, password)
       router.push('/events')
@@ -28,40 +28,48 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-950 p-4">
+    <main className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950 p-4">
+      {/* Theme toggle — top-right corner */}
+      <div className="fixed top-4 right-4">
+        <ThemeToggle />
+      </div>
+
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white">Bench Live</h1>
-          <p className="text-gray-400 mt-1 text-sm">Sign in to your account</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Bench Live</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">Sign in to your account</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-gray-900 rounded-xl p-6 space-y-4 ring-1 ring-gray-800">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white dark:bg-gray-900 rounded-xl p-6 space-y-4 ring-1 ring-gray-200 dark:ring-gray-800 shadow-sm"
+        >
           {error && (
-            <div className="rounded-lg bg-red-900/30 border border-red-800 px-4 py-3 text-sm text-red-400">
+            <div className="rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-600 dark:text-red-400">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">Email</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white placeholder-gray-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 px-3 py-2 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               placeholder="you@example.com"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">Password</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white placeholder-gray-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 px-3 py-2 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               placeholder="••••••••"
             />
           </div>
@@ -75,7 +83,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-center text-xs text-gray-600 mt-6">
+        <p className="text-center text-xs text-gray-400 dark:text-gray-600 mt-6">
           Demo: coach@benchlive.com / coach123
         </p>
       </div>

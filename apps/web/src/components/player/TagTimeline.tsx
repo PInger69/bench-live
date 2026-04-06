@@ -54,9 +54,9 @@ export function TagTimeline({
   }
 
   return (
-    <div className="px-3 py-2 bg-gray-950 border-t border-gray-800 select-none">
+    <div className="px-3 py-2 bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 select-none">
       {/* Time labels */}
-      <div className="flex justify-between text-xs text-gray-600 font-mono mb-1 px-0.5">
+      <div className="flex justify-between text-xs text-gray-400 dark:text-gray-600 font-mono mb-1 px-0.5">
         <span>{formatTime(currentTime)}</span>
         <span>{duration > 0 ? formatTime(duration) : '--:--'}</span>
       </div>
@@ -69,17 +69,17 @@ export function TagTimeline({
         onTouchStart={handleBarClick}
       >
         {/* Track */}
-        <div className="absolute inset-y-0 my-auto h-1.5 w-full rounded-full bg-gray-800" />
+        <div className="absolute inset-y-0 my-auto h-1.5 w-full rounded-full bg-gray-200 dark:bg-gray-800" />
 
         {/* Played portion */}
         <div
-          className="absolute inset-y-0 my-auto h-1.5 rounded-full bg-gray-500 transition-none"
+          className="absolute inset-y-0 my-auto h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 transition-none"
           style={{ width: `${progress}%` }}
         />
 
         {/* Tag tick marks — colour resolved live from current settings */}
         {duration > 0 && visibleTags.map((tag) => {
-          const pct   = (tag.time / duration) * 100
+          const pct    = (tag.time / duration) * 100
           const colour = resolveColour(tag)
           return (
             <button
@@ -100,24 +100,24 @@ export function TagTimeline({
 
         {/* Playhead */}
         <div
-          className="absolute top-0 bottom-0 w-0.5 -translate-x-px bg-white shadow-lg shadow-white/20 pointer-events-none"
+          className="absolute top-0 bottom-0 w-0.5 -translate-x-px bg-gray-800 dark:bg-white shadow-lg pointer-events-none"
           style={{ left: `${progress}%` }}
         >
-          <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-3.5 w-3.5 rounded-full bg-white shadow" />
+          <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-3.5 w-3.5 rounded-full bg-gray-800 dark:bg-white shadow" />
         </div>
 
         {/* Tooltip — also uses live colour */}
         {hoveredTag && duration > 0 && (
           <div
-            className="absolute bottom-full mb-2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap pointer-events-none shadow-lg ring-1 ring-gray-700 z-50"
+            className="absolute bottom-full mb-2 -translate-x-1/2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs rounded px-2 py-1 whitespace-nowrap pointer-events-none shadow-lg ring-1 ring-gray-200 dark:ring-gray-700 z-50"
             style={{ left: `${(hoveredTag.time / duration) * 100}%` }}
           >
             <div className="flex items-center gap-1.5">
               <div className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: resolveColour(hoveredTag) }} />
               <span className="font-medium">{hoveredTag.name}</span>
-              <span className="text-gray-400">{formatTime(hoveredTag.time)}</span>
+              <span className="text-gray-500 dark:text-gray-400">{formatTime(hoveredTag.time)}</span>
             </div>
-            {hoveredTag.period && <div className="text-gray-400 text-xs">{hoveredTag.period}</div>}
+            {hoveredTag.period && <div className="text-gray-400 dark:text-gray-500 text-xs">{hoveredTag.period}</div>}
           </div>
         )}
       </div>
@@ -125,11 +125,11 @@ export function TagTimeline({
       {/* Filter indicator */}
       {activeColours.length > 0 && (
         <div className="flex items-center gap-1.5 mt-1 px-0.5">
-          <span className="text-xs text-gray-600">Showing</span>
+          <span className="text-xs text-gray-400 dark:text-gray-600">Showing</span>
           {activeColours.map((c) => (
             <span key={c} className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: c }} />
           ))}
-          <span className="text-xs text-gray-600">
+          <span className="text-xs text-gray-400 dark:text-gray-600">
             ({visibleTags.length} of {tags.length})
           </span>
         </div>

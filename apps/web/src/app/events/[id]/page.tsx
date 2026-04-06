@@ -10,6 +10,7 @@ import { TagButtons } from '@/components/tagger/TagButtons'
 import { ControlsBar, PERIODS, TAG_SETS } from '@/components/tagger/ControlsBar'
 import { TagColourSettings } from '@/components/settings/TagColourSettings'
 import { useTagColours } from '@/hooks/useTagColours'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { apiFetch } from '@/lib/utils'
 import type { Tag } from '@bench-live/shared'
 import { TagType } from '@bench-live/shared'
@@ -162,10 +163,10 @@ export default function EventPage() {
 
   if (loading || !event) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gray-950">
+      <main className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
         <div className="text-center">
           <div className="h-8 w-8 rounded-full border-2 border-brand-500 border-t-transparent animate-spin mx-auto mb-3" />
-          <p className="text-gray-400 text-sm">Loading event...</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">Loading event...</p>
         </div>
       </main>
     )
@@ -178,48 +179,54 @@ export default function EventPage() {
   const primaryFeed = event.feeds?.[0] ?? null
 
   return (
-    <main className="h-screen bg-gray-950 flex flex-col overflow-hidden">
+    <main className="h-screen bg-gray-50 dark:bg-gray-950 flex flex-col overflow-hidden">
 
       {/* ── Header ── */}
-      <header className="flex-shrink-0 bg-gray-900 border-b border-gray-800 px-3 py-2 flex items-center justify-between gap-2">
+      <header className="flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-3 py-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <button onClick={() => router.push('/events')} className="text-gray-400 hover:text-white text-sm flex-shrink-0 touch-manipulation p-1">
+          <button
+            onClick={() => router.push('/events')}
+            className="text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm flex-shrink-0 touch-manipulation p-1"
+          >
             ←
           </button>
-          <span className="text-gray-700 flex-shrink-0">/</span>
-          <h1 className="text-sm font-semibold text-white truncate">{event.name}</h1>
+          <span className="text-gray-300 dark:text-gray-700 flex-shrink-0">/</span>
+          <h1 className="text-sm font-semibold text-gray-900 dark:text-white truncate">{event.name}</h1>
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0">
           {event.homeTeam && event.visitTeam && (
-            <span className="hidden sm:block text-xs text-gray-400 font-medium">
-              {event.homeTeam.shortName} <span className="text-gray-600">vs</span> {event.visitTeam.shortName}
+            <span className="hidden sm:block text-xs text-gray-500 dark:text-gray-400 font-medium">
+              {event.homeTeam.shortName} <span className="text-gray-300 dark:text-gray-600">vs</span> {event.visitTeam.shortName}
             </span>
           )}
 
           {event.status === 'LIVE' ? (
-            <span className="flex items-center gap-1.5 text-xs font-bold rounded-full px-2.5 py-1 bg-red-900/50 text-red-400 ring-1 ring-red-700 tag-live">
-              <span className="h-1.5 w-1.5 rounded-full bg-red-400" /> LIVE
+            <span className="flex items-center gap-1.5 text-xs font-bold rounded-full px-2.5 py-1 bg-red-50 dark:bg-red-900/50 text-red-600 dark:text-red-400 ring-1 ring-red-200 dark:ring-red-700 tag-live">
+              <span className="h-1.5 w-1.5 rounded-full bg-red-500 dark:bg-red-400" /> LIVE
             </span>
           ) : (
-            <span className="text-xs rounded-full px-2.5 py-1 bg-gray-800 text-gray-400">{event.status}</span>
+            <span className="text-xs rounded-full px-2.5 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">{event.status}</span>
           )}
 
           {/* Debug clear tags */}
           {tags.length > 0 && (
             <button
               onClick={() => confirm(`Delete all ${tags.length} tags?`) && clearAllTags(token!)}
-              className="text-gray-600 hover:text-red-400 transition-colors p-1 touch-manipulation"
+              className="text-gray-400 hover:text-red-500 transition-colors p-1 touch-manipulation"
               title="Clear all tags"
             >
               🗑
             </button>
           )}
 
+          {/* ☀/🌙 Theme toggle */}
+          <ThemeToggle />
+
           {/* ⚙ Settings gear */}
           <button
             onClick={() => setSettingsOpen(true)}
-            className="h-8 w-8 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-400 hover:text-white transition-colors touch-manipulation"
+            className="h-8 w-8 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors touch-manipulation"
             title="Tag Names & Colours"
             aria-label="Open tag names and colour settings"
           >

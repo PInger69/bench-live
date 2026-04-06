@@ -94,20 +94,20 @@ export function ControlsBar({
   }
 
   return (
-    <div className="flex-shrink-0 bg-gray-900 border-t border-gray-800">
+    <div className="flex-shrink-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
       {/* Row 1: Sport | Period | Colour filters | Players | Rating | Coach Pick | Time */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-3 py-2 border-b border-gray-800/60">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-3 py-2 border-b border-gray-100 dark:border-gray-800/60">
 
-        {/* Sport */}
+        {/* Sport picker */}
         <select
           value={activeSport}
           onChange={(e) => onSportChange(e.target.value)}
-          className="bg-gray-800 border border-gray-700 text-white text-xs rounded-lg px-2 py-1.5 touch-manipulation focus:outline-none focus:border-brand-500"
+          className="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white text-xs rounded-lg px-2 py-1.5 touch-manipulation focus:outline-none focus:border-brand-500"
         >
           {SPORTS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
         </select>
 
-        {/* Period */}
+        {/* Period buttons */}
         <div className="flex items-center gap-1">
           {periods.map((p) => (
             <button
@@ -115,7 +115,9 @@ export function ControlsBar({
               onClick={() => onPeriodChange(p)}
               className={cn(
                 'px-2.5 py-1.5 rounded-lg text-xs font-bold touch-manipulation transition-colors min-w-[36px]',
-                activePeriod === p ? 'bg-brand-600 text-white' : 'bg-gray-800 text-gray-400 active:bg-gray-700'
+                activePeriod === p
+                  ? 'bg-brand-600 text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
               )}
             >
               {p}
@@ -128,7 +130,7 @@ export function ControlsBar({
           {activeColours.length > 0 && (
             <button
               onClick={() => onColourFilterChange([])}
-              className="text-xs text-gray-500 hover:text-white transition-colors px-1.5 py-1 rounded"
+              className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors px-1.5 py-1 rounded"
               title="Clear colour filter"
             >
               All
@@ -140,11 +142,11 @@ export function ControlsBar({
               <button
                 key={colour}
                 onClick={() => toggleColourFilter(colour)}
-                title={active ? `Remove ${colour} filter` : `Filter to ${colour}`}
+                title={active ? 'Remove filter' : 'Filter to this colour'}
                 className={cn(
                   'h-6 w-6 rounded-full touch-manipulation transition-all duration-150 flex-shrink-0',
                   active
-                    ? 'ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110 opacity-100'
+                    ? 'ring-2 ring-gray-900 dark:ring-white ring-offset-1 ring-offset-white dark:ring-offset-gray-900 scale-110 opacity-100'
                     : 'opacity-35 hover:opacity-70 active:scale-95'
                 )}
                 style={{ background: colour }}
@@ -159,13 +161,15 @@ export function ControlsBar({
             onClick={() => setShowPlayers(!showPlayers)}
             className={cn(
               'px-3 py-1.5 rounded-lg text-xs font-semibold touch-manipulation transition-colors',
-              selectedPlayers.length > 0 ? 'bg-brand-600 text-white' : 'bg-gray-800 text-gray-400'
+              selectedPlayers.length > 0
+                ? 'bg-brand-600 text-white'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
             )}
           >
             Players {selectedPlayers.length > 0 && `(${selectedPlayers.length})`}
           </button>
           {showPlayers && (
-            <div className="absolute bottom-full mb-2 left-0 z-50 bg-gray-800 rounded-xl shadow-2xl ring-1 ring-gray-700 p-3 w-64">
+            <div className="absolute bottom-full mb-2 left-0 z-50 bg-white dark:bg-gray-800 rounded-xl shadow-2xl ring-1 ring-gray-200 dark:ring-gray-700 p-3 w-64">
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {DEMO_PLAYERS.map((p) => (
                   <button
@@ -173,7 +177,9 @@ export function ControlsBar({
                     onClick={() => togglePlayer(p)}
                     className={cn(
                       'px-2.5 py-1.5 rounded-lg text-xs font-medium touch-manipulation min-w-[40px]',
-                      selectedPlayers.includes(p) ? 'bg-brand-600 text-white' : 'bg-gray-700 text-gray-300'
+                      selectedPlayers.includes(p)
+                        ? 'bg-brand-600 text-white'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
                     )}
                   >
                     {p}
@@ -181,20 +187,33 @@ export function ControlsBar({
                 ))}
               </div>
               <div className="flex justify-between">
-                <button onClick={() => onPlayersChange([])} className="text-xs text-gray-500 active:text-white">Clear</button>
-                <button onClick={() => setShowPlayers(false)} className="text-xs text-brand-400">Done</button>
+                <button
+                  onClick={() => onPlayersChange([])}
+                  className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                >
+                  Clear
+                </button>
+                <button
+                  onClick={() => setShowPlayers(false)}
+                  className="text-xs text-brand-600 dark:text-brand-400"
+                >
+                  Done
+                </button>
               </div>
             </div>
           )}
         </div>
 
-        {/* Rating */}
+        {/* Rating stars */}
         <div className="flex items-center gap-0.5">
           {[1, 2, 3, 4, 5].map((s) => (
             <button
               key={s}
               onClick={() => onRatingChange(rating === s ? 0 : s)}
-              className={cn('text-xl touch-manipulation transition-colors', s <= rating ? 'text-yellow-400' : 'text-gray-700')}
+              className={cn(
+                'text-xl touch-manipulation transition-colors',
+                s <= rating ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-700'
+              )}
             >
               ★
             </button>
@@ -206,7 +225,9 @@ export function ControlsBar({
           onClick={() => onCoachPickChange(!coachPick)}
           className={cn(
             'px-3 py-1.5 rounded-lg text-xs font-semibold touch-manipulation transition-colors',
-            coachPick ? 'bg-yellow-500/25 text-yellow-400 ring-1 ring-yellow-500/50' : 'bg-gray-800 text-gray-500'
+            coachPick
+              ? 'bg-yellow-500/25 text-yellow-600 dark:text-yellow-400 ring-1 ring-yellow-500/50'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-500'
           )}
         >
           ★ Pick
@@ -215,9 +236,9 @@ export function ControlsBar({
         {/* Time + last tagged */}
         <div className="ml-auto flex items-center gap-3">
           {lastTagged && (
-            <span className="text-xs text-green-400 font-medium">✓ {lastTagged}</span>
+            <span className="text-xs text-green-600 dark:text-green-400 font-medium">✓ {lastTagged}</span>
           )}
-          <span className="text-xs text-gray-500 font-mono">{formatTime(currentTime)}</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500 font-mono">{formatTime(currentTime)}</span>
         </div>
       </div>
 
@@ -228,7 +249,7 @@ export function ControlsBar({
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder="Add a comment to the next tag (optional)..."
-          className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-brand-500 focus:outline-none touch-manipulation"
+          className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-brand-500 focus:outline-none touch-manipulation"
         />
       </div>
     </div>
