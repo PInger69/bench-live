@@ -203,13 +203,15 @@ export default function EventPage() {
             />
           </div>
 
-          {/* Tag timeline — filtered by activeColours */}
+          {/* Tag timeline — colour resolved live so changing a tag colour
+               immediately updates all existing ticks of that name */}
           <TagTimeline
             tags={tags}
             currentTime={currentTime}
             duration={duration}
             onSeek={handleSeek}
             activeColours={activeColours}
+            getColour={getColour}
           />
 
           {/* Controls bar */}

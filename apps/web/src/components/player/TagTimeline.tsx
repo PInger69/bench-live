@@ -9,19 +9,40 @@ interface TagTimelineProps {
   currentTime: number
   duration: number
   onSeek: (time: number) => void
-  /** When non-empty, only ticks whose colour is in this list are shown */
+  /** When non-empty, only ticks whose resolved colour is in this list are shown */
   activeColours?: string[]
+  /**
+   * Colour resolver — called with tag.name to get the *current* user-assigned
+   * colour. Falls back to tag.colour (baked-in at creation time) when undefined.
+   */
+  getColour?: (name: string) => string | undefined
 }
 
-export function TagTimeline({ tags, currentTime, duration, onSeek, activeColours = [] }: TagTimelineProps) {
+export function TagTimeline({
+  tags,
+  currentTime,
+  duration,
+  onSeek,
+  activeColours = [],
+  getColour,
+}: TagTimelineProps) {
   const barRef = useRef<HTMLDivElement>(null)
   const [hoveredTag, setHoveredTag] = useState<Tag | null>(null)
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
 
-  // Apply colour filter — if no colours selected, show everything
+  /**
+   * Resolve the display colour for a tag:
+   *   1. Current user setting for this tag name  (live, from settings drawer)
+   *   2. The colour stored in the DB at creation time  (fallback)
+   */
+  function resolveColour(tag: Tag): string {
+    return (getColour ? getColour(tag.name) : undefined) ?? tag.colour
+  }
+
+  // Apply colour filter using the *resolved* (live) colour
   const visibleTags = activeColours.length > 0
-    ? tags.filter((t) => activeColours.includes(t.colour))
+    ? tags.filter((t) => activeColours.includes(resolveColour(t)))
     : tags
 
   function handleBarClick(e: React.MouseEvent | React.TouchEvent) {
@@ -56,9 +77,10 @@ export function TagTimeline({ tags, currentTime, duration, onSeek, activeColours
           style={{ width: `${progress}%` }}
         />
 
-        {/* Tag tick marks — filtered by activeColours */}
+        {/* Tag tick marks — colour resolved live from current settings */}
         {duration > 0 && visibleTags.map((tag) => {
-          const pct = (tag.time / duration) * 100
+          const pct   = (tag.time / duration) * 100
+          const colour = resolveColour(tag)
           return (
             <button
               key={tag.id}
@@ -68,10 +90,9 @@ export function TagTimeline({ tags, currentTime, duration, onSeek, activeColours
               onMouseEnter={() => setHoveredTag(tag)}
               onMouseLeave={() => setHoveredTag(null)}
             >
-              {/* Tick line */}
               <div
                 className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-4 w-1 rounded-sm opacity-90 group-hover/tick:opacity-100 group-hover/tick:h-5 transition-all"
-                style={{ background: tag.colour }}
+                style={{ background: colour }}
               />
             </button>
           )
@@ -85,14 +106,14 @@ export function TagTimeline({ tags, currentTime, duration, onSeek, activeColours
           <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-3.5 w-3.5 rounded-full bg-white shadow" />
         </div>
 
-        {/* Tooltip */}
+        {/* Tooltip — also uses live colour */}
         {hoveredTag && duration > 0 && (
           <div
             className="absolute bottom-full mb-2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap pointer-events-none shadow-lg ring-1 ring-gray-700 z-50"
             style={{ left: `${(hoveredTag.time / duration) * 100}%` }}
           >
             <div className="flex items-center gap-1.5">
-              <div className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: hoveredTag.colour }} />
+              <div className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: resolveColour(hoveredTag) }} />
               <span className="font-medium">{hoveredTag.name}</span>
               <span className="text-gray-400">{formatTime(hoveredTag.time)}</span>
             </div>
@@ -106,7 +127,7 @@ export function TagTimeline({ tags, currentTime, duration, onSeek, activeColours
         <div className="flex items-center gap-1.5 mt-1 px-0.5">
           <span className="text-xs text-gray-600">Showing</span>
           {activeColours.map((c) => (
-            <span key={c} className="h-2 w-2 rounded-full" style={{ background: c }} />
+            <span key={c} className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: c }} />
           ))}
           <span className="text-xs text-gray-600">
             ({visibleTags.length} of {tags.length})
