@@ -59,9 +59,13 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         if (!v) return
         resumeAfterRef.current = !v.paused
         wasMutedRef.current    = v.muted
-        // Mute immediately so buffered audio doesn't play out of sync while seeking
-        v.muted = true
+        v.muted = true          // silence immediately — no audio during scrub
         if (!v.paused) v.pause()
+        // Stop HLS from buffering new segments while the user is dragging.
+        // Without this, each seek triggers a new audio segment load and you
+        // end up with multiple audio streams playing simultaneously.
+        const hls = hlsRef.current as { stopLoad?: () => void } | null
+        hls?.stopLoad?.()
       },
 
       // Called on every pointer-move: queue the seek, let the 'seeked' event chain them
@@ -76,8 +80,11 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       endScrub: () => {
         const v = videoRef.current
         if (!v) return
-        // Restore mute first so audio comes back at the correct new position
-        v.muted = wasMutedRef.current
+        // Tell HLS to start loading fresh from exactly the position we landed on.
+        // This prevents any stale audio segments from the scrub path playing back.
+        const hls = hlsRef.current as { startLoad?: (pos: number) => void } | null
+        hls?.startLoad?.(v.currentTime)
+        v.muted = wasMutedRef.current   // restore user's mute preference
         if (resumeAfterRef.current) v.play().catch(() => {})
         resumeAfterRef.current = false
       },
