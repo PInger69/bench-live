@@ -6,33 +6,33 @@
 /* These swap automatically when JS adds/removes the `dark` class on <html>  */
 
 :root {
-  --c-bg:       #f9fafb;
+  --c-bg:       #f4f6f9;
   --c-surface:  #ffffff;
-  --c-surf2:    #f3f4f6;
-  --c-surf3:    #e5e7eb;
-  --c-border:   #e5e7eb;
-  --c-border2:  #d1d5db;
-  --c-text1:    #111827;
-  --c-text2:    #6b7280;
-  --c-text3:    #9ca3af;
-  --tag-btn-pct:    8%;
-  --tag-btn-base:   #f9fafb;
-  --tag-active-pct: 18%;
+  --c-surf2:    #eef0f4;
+  --c-surf3:    #dde1e8;
+  --c-border:   #e2e5eb;
+  --c-border2:  #cdd1d9;
+  --c-text1:    #0d1117;
+  --c-text2:    #57606a;
+  --c-text3:    #8b949e;
+  --tag-btn-pct:    10%;
+  --tag-btn-base:   #f4f6f9;
+  --tag-active-pct: 22%;
 }
 
 .dark {
-  --c-bg:       #030712;
-  --c-surface:  #111827;
-  --c-surf2:    #1f2937;
-  --c-surf3:    #374151;
-  --c-border:   #1f2937;
-  --c-border2:  #374151;
-  --c-text1:    #f9fafb;
-  --c-text2:    #9ca3af;
-  --c-text3:    #6b7280;
-  --tag-btn-pct:    12%;
-  --tag-btn-base:   #111827;
-  --tag-active-pct: 28%;
+  --c-bg:       #09090b;
+  --c-surface:  #0f1117;
+  --c-surf2:    #161b22;
+  --c-surf3:    #21262d;
+  --c-border:   #1c2128;
+  --c-border2:  #30363d;
+  --c-text1:    #e6edf3;
+  --c-text2:    #848d97;
+  --c-text3:    #484f58;
+  --tag-btn-pct:    14%;
+  --tag-btn-base:   #0f1117;
+  --tag-active-pct: 30%;
 }
 
 /* Apply theme to root — pure CSS, works with zero Tailwind */
@@ -60,3 +60,17 @@ html, body {
   50%       { opacity: 0.6; }
 }
 .tag-live { animation: tag-pulse 1.5s ease-in-out infinite; }
+
+/* Tag button press ripple */
+@keyframes tag-press {
+  0%   { transform: scale(1);    opacity: 0.4; }
+  100% { transform: scale(2.5);  opacity: 0; }
+}
+.tag-ripple { animation: tag-press 400ms ease-out forwards; }
+
+/* Tagged flash overlay */
+@keyframes tagged-flash {
+  0%   { opacity: 0.35; }
+  100% { opacity: 0; }
+}
+.tagged-flash { animation: tagged-flash 600ms ease-out forwards; }

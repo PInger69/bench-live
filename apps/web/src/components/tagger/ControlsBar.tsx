@@ -1,6 +1,5 @@
 'use client'
 
-// no useState needed after Players removal
 import { cn, formatTime } from '@/lib/utils'
 
 const SPORTS = [
@@ -24,62 +23,59 @@ export const PERIODS: Record<string, string[]> = {
 
 /**
  * Standard start times (seconds) for each period.
- * These define where each period begins on a full-length recording.
- * The last period's end is Infinity (captures any overtime / extra time).
- *
- * Soccer  : 2 × 45 min halves = 5400 s; ET 2 × 15 min; P = shootout
- * Hockey  : 3 × 20 min periods = 3600 s; OT sessions 5 min each
- * Rugby   : 2 × 40 min halves = 4800 s; ET 2 × 10 min; SD = sudden death
- * Football: 4 × 15 min quarters = 3600 s
- * Basketball: 4 × 10 min quarters = 2400 s (FIBA)
+ * Soccer  : 2 × 45 min halves; ET 2 × 15 min; P = shootout
+ * Hockey  : 3 × 20 min periods; OT sessions 5 min each
+ * Rugby   : 2 × 40 min halves; ET 2 × 10 min; SD = sudden death
+ * Football: 4 × 15 min quarters
+ * Basketball: 4 × 10 min quarters (FIBA)
  */
 export const PERIOD_TIMES: Record<string, { label: string; start: number; end: number }[]> = {
   SOCCER: [
-    { label: '1H',  start: 0,    end: 2700   },  // 0 – 45 min
-    { label: '2H',  start: 2700, end: 5400   },  // 45 – 90 min
-    { label: 'ET1', start: 5400, end: 6300   },  // 90 – 105 min
-    { label: 'ET2', start: 6300, end: 7200   },  // 105 – 120 min
-    { label: 'P',   start: 7200, end: Infinity }, // shootout
+    { label: '1H',  start: 0,    end: 2700   },
+    { label: '2H',  start: 2700, end: 5400   },
+    { label: 'ET1', start: 5400, end: 6300   },
+    { label: 'ET2', start: 6300, end: 7200   },
+    { label: 'P',   start: 7200, end: Infinity },
   ],
   HOCKEY: [
-    { label: 'P1',  start: 0,    end: 1200   },  // 0 – 20 min
-    { label: 'P2',  start: 1200, end: 2400   },  // 20 – 40 min
-    { label: 'P3',  start: 2400, end: 3600   },  // 40 – 60 min
-    { label: 'OT1', start: 3600, end: 3900   },  // 60 – 65 min
-    { label: 'OT2', start: 3900, end: 4200   },  // 65 – 70 min
+    { label: 'P1',  start: 0,    end: 1200   },
+    { label: 'P2',  start: 1200, end: 2400   },
+    { label: 'P3',  start: 2400, end: 3600   },
+    { label: 'OT1', start: 3600, end: 3900   },
+    { label: 'OT2', start: 3900, end: 4200   },
     { label: 'P',   start: 4200, end: Infinity },
   ],
   RUGBY: [
-    { label: '1H',  start: 0,    end: 2400   },  // 0 – 40 min
-    { label: '2H',  start: 2400, end: 4800   },  // 40 – 80 min
-    { label: 'ET1', start: 4800, end: 5400   },  // 80 – 90 min
-    { label: 'ET2', start: 5400, end: 6000   },  // 90 – 100 min
-    { label: 'SD',  start: 6000, end: Infinity }, // sudden death
+    { label: '1H',  start: 0,    end: 2400   },
+    { label: '2H',  start: 2400, end: 4800   },
+    { label: 'ET1', start: 4800, end: 5400   },
+    { label: 'ET2', start: 5400, end: 6000   },
+    { label: 'SD',  start: 6000, end: Infinity },
   ],
   FOOTBALL: [
-    { label: 'Q1', start: 0,    end: 900    },   // 0 – 15 min
-    { label: 'Q2', start: 900,  end: 1800   },   // 15 – 30 min
-    { label: 'Q3', start: 1800, end: 2700   },   // 30 – 45 min
-    { label: 'Q4', start: 2700, end: 3600   },   // 45 – 60 min
+    { label: 'Q1', start: 0,    end: 900    },
+    { label: 'Q2', start: 900,  end: 1800   },
+    { label: 'Q3', start: 1800, end: 2700   },
+    { label: 'Q4', start: 2700, end: 3600   },
     { label: 'OT', start: 3600, end: Infinity },
   ],
   BASKETBALL: [
-    { label: 'Q1', start: 0,    end: 600    },   // 0 – 10 min
-    { label: 'Q2', start: 600,  end: 1200   },   // 10 – 20 min
-    { label: 'Q3', start: 1200, end: 1800   },   // 20 – 30 min
-    { label: 'Q4', start: 1800, end: 2400   },   // 30 – 40 min
+    { label: 'Q1', start: 0,    end: 600    },
+    { label: 'Q2', start: 600,  end: 1200   },
+    { label: 'Q3', start: 1200, end: 1800   },
+    { label: 'Q4', start: 1800, end: 2400   },
     { label: 'OT', start: 2400, end: Infinity },
   ],
   GENERIC: [
-    { label: 'P1', start: 0,              end: Infinity / 3     },
+    { label: 'P1', start: 0,              end: Infinity / 3       },
     { label: 'P2', start: Infinity / 3,   end: (Infinity / 3) * 2 },
-    { label: 'P3', start: (Infinity / 3) * 2, end: Infinity     },
+    { label: 'P3', start: (Infinity / 3) * 2, end: Infinity       },
   ],
 }
 
 /**
- * Returns the period label that contains the given time (seconds)
- * for the given sport. Falls back to the first period if nothing matches.
+ * Returns the period label that contains the given time (seconds).
+ * Falls back to the first period if nothing matches.
  */
 export function detectPeriod(timeSeconds: number, sport: string): string {
   const defs = PERIOD_TIMES[sport] ?? PERIOD_TIMES.SOCCER
@@ -121,8 +117,7 @@ export function ControlsBar({
   activeColours, onColourFilterChange,
   activeSport, activePeriod, rating, coachPick, lastTagged,
 }: ControlsBarProps) {
-  const periods = PERIODS[activeSport] ?? PERIODS.GENERIC
-  // Auto-detected period from the current video time
+  const periods   = PERIODS[activeSport] ?? PERIODS.GENERIC
   const autoPeriod = detectPeriod(currentTime, activeSport)
 
   function toggleColourFilter(colour: string) {
@@ -133,33 +128,44 @@ export function ControlsBar({
     }
   }
 
-  const chipCls = 'px-2.5 py-1.5 rounded-lg text-xs font-bold touch-manipulation transition-colors min-w-[36px]'
-
   return (
     <div
-      className="flex-shrink-0 border-t border-theme"
-      style={{ background: 'var(--c-surface)' }}
+      className="flex-shrink-0"
+      style={{
+        background: 'var(--c-surface)',
+        borderTop: '1px solid var(--c-border)',
+      }}
     >
-      {/* Single row — centred */}
-      <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 px-3 py-2">
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-3 py-2.5">
 
-        {/* Period — auto-highlighted from video time; tap to force-override */}
+        {/* ── Period pills ── */}
         <div className="flex items-center gap-1">
           {periods.map((p) => {
-            const isAuto   = p === autoPeriod   // where the clock says we are
-            const isActive = p === activePeriod  // may be user-overridden
+            const isAuto   = p === autoPeriod
+            const isActive = p === activePeriod
             return (
               <button
                 key={p}
                 onClick={() => onPeriodChange(p)}
-                title={isAuto ? `Current period (auto-detected)` : undefined}
-                className={cn(chipCls)}
+                title={isAuto ? 'Current period (auto-detected)' : undefined}
+                className="px-2.5 py-1.5 rounded-lg text-xs font-bold tracking-wide touch-manipulation transition-all duration-150 min-w-[36px]"
                 style={
                   isActive
-                    ? { background: '#2563EB', color: '#fff' }               // selected
+                    ? {
+                        background: '#2563EB',
+                        color: '#fff',
+                        boxShadow: '0 0 10px rgba(37,99,235,0.45)',
+                      }
                     : isAuto
-                    ? { background: 'var(--c-surf3)', color: 'var(--c-text1)' } // auto (dimmer)
-                    : { background: 'var(--c-surf2)', color: 'var(--c-text3)' } // inactive
+                    ? {
+                        background: 'var(--c-surf3)',
+                        color: 'var(--c-text2)',
+                        outline: '1px solid var(--c-border2)',
+                      }
+                    : {
+                        background: 'transparent',
+                        color: 'var(--c-text3)',
+                      }
                 }
               >
                 {p}
@@ -168,13 +174,20 @@ export function ControlsBar({
           })}
         </div>
 
-        {/* Colour filter dots */}
+        {/* Divider */}
+        <div className="h-4 w-px flex-shrink-0" style={{ background: 'var(--c-border2)' }} />
+
+        {/* ── Colour filter dots ── */}
         <div className="flex items-center gap-1.5">
           {activeColours.length > 0 && (
             <button
               onClick={() => onColourFilterChange([])}
-              className="text-xs px-1.5 py-1 rounded touch-manipulation transition-colors font-medium"
-              style={{ color: 'var(--c-text2)', background: 'var(--c-surf2)' }}
+              className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md touch-manipulation transition-all"
+              style={{
+                color: 'var(--c-text2)',
+                background: 'var(--c-surf2)',
+                border: '1px solid var(--c-border2)',
+              }}
             >
               All
             </button>
@@ -186,54 +199,83 @@ export function ControlsBar({
                 key={colour}
                 onClick={() => toggleColourFilter(colour)}
                 title={active ? 'Remove filter' : 'Filter to this colour'}
-                className={cn(
-                  'h-6 w-6 rounded-full touch-manipulation transition-all duration-150 flex-shrink-0',
-                  active ? 'scale-110 opacity-100' : 'opacity-35 hover:opacity-70 active:scale-95'
-                )}
+                className="rounded-full touch-manipulation transition-all duration-150 flex-shrink-0"
                 style={{
+                  width: active ? 22 : 18,
+                  height: active ? 22 : 18,
                   background: colour,
-                  outline: active ? `2px solid var(--c-text1)` : undefined,
-                  outlineOffset: active ? '2px' : undefined,
+                  boxShadow: active
+                    ? `0 0 10px ${colour}90, 0 0 4px ${colour}`
+                    : undefined,
+                  outline: active ? `2px solid var(--c-text1)` : 'none',
+                  outlineOffset: active ? '2px' : '0',
+                  opacity: active ? 1 : 0.4,
                 }}
               />
             )
           })}
         </div>
 
-        {/* Rating */}
+        {/* Divider */}
+        <div className="h-4 w-px flex-shrink-0" style={{ background: 'var(--c-border2)' }} />
+
+        {/* ── Rating stars ── */}
         <div className="flex items-center gap-0.5">
-          {[1,2,3,4,5].map((s) => (
+          {[1, 2, 3, 4, 5].map((s) => (
             <button
               key={s}
               onClick={() => onRatingChange(rating === s ? 0 : s)}
-              className="text-xl touch-manipulation transition-colors"
-              style={{ color: s <= rating ? '#facc15' : 'var(--c-surf3)' }}
+              className="text-lg touch-manipulation transition-all duration-100"
+              style={{
+                color: s <= rating ? '#facc15' : 'var(--c-surf3)',
+                textShadow: s <= rating ? '0 0 8px rgba(250,204,21,0.6)' : undefined,
+                transform: s <= rating ? 'scale(1.1)' : undefined,
+              }}
             >
               ★
             </button>
           ))}
         </div>
 
-        {/* Coach Pick */}
+        {/* ── Coach Pick ── */}
         <button
           onClick={() => onCoachPickChange(!coachPick)}
-          className="px-3 py-1.5 rounded-lg text-xs font-semibold touch-manipulation transition-colors"
+          className="px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide touch-manipulation transition-all duration-150"
           style={
             coachPick
-              ? { background: 'rgba(234,179,8,0.2)', color: '#ca8a04', outline: '1px solid rgba(234,179,8,0.4)' }
-              : { background: 'var(--c-surf2)', color: 'var(--c-text3)' }
+              ? {
+                  background: 'rgba(234,179,8,0.15)',
+                  color: '#ca8a04',
+                  outline: '1px solid rgba(234,179,8,0.45)',
+                  boxShadow: '0 0 8px rgba(234,179,8,0.25)',
+                }
+              : {
+                  background: 'var(--c-surf2)',
+                  color: 'var(--c-text3)',
+                }
           }
         >
           ★ Pick
         </button>
 
-        {/* Time + last tagged */}
+        {/* ── Time + last tagged ── */}
         <div className="flex items-center gap-2">
           {lastTagged && (
-            <span className="text-xs font-medium" style={{ color: '#16a34a' }}>✓ {lastTagged}</span>
+            <span
+              className="text-xs font-semibold"
+              style={{ color: '#22c55e', textShadow: '0 0 8px rgba(34,197,94,0.5)' }}
+            >
+              ✓ {lastTagged}
+            </span>
           )}
-          <span className="text-xs font-mono" style={{ color: 'var(--c-text3)' }}>{formatTime(currentTime)}</span>
+          <span
+            className="text-xs font-mono tabular-nums"
+            style={{ color: 'var(--c-text3)' }}
+          >
+            {formatTime(currentTime)}
+          </span>
         </div>
+
       </div>
     </div>
   )

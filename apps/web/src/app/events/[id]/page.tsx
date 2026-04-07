@@ -303,6 +303,7 @@ export default function EventPage() {
             onSeek={handleSeek}
             activeColours={activeColours}
             getColour={getColourByName}
+            sport={activeSport}
           />
 
           {/* Controls bar */}
