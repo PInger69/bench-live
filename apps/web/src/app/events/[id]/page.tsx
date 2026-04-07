@@ -80,7 +80,21 @@ export default function EventPage() {
 
   const handleSeek = useCallback((time: number) => {
     playerRef.current?.seekTo(time)
-    setPeriodOverride(null) // re-auto-detect period after manual seek
+    setPeriodOverride(null)
+  }, [])
+
+  const handleScrubStart = useCallback((time: number) => {
+    playerRef.current?.beginScrub()
+    playerRef.current?.scrub(time)
+    setPeriodOverride(null)
+  }, [])
+
+  const handleScrub = useCallback((time: number) => {
+    playerRef.current?.scrub(time)
+  }, [])
+
+  const handleScrubEnd = useCallback(() => {
+    playerRef.current?.endScrub()
   }, [])
 
   async function handleTag(tagKey: string) {
@@ -301,6 +315,9 @@ export default function EventPage() {
             currentTime={currentTime}
             duration={duration}
             onSeek={handleSeek}
+            onScrubStart={handleScrubStart}
+            onScrub={handleScrub}
+            onScrubEnd={handleScrubEnd}
             activeColours={activeColours}
             getColour={getColourByName}
             sport={activeSport}

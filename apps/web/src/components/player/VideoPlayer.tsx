@@ -4,7 +4,10 @@ import { useEffect, useRef, useImperativeHandle, forwardRef, useState, useCallba
 import type { Feed } from '@bench-live/shared'
 
 export interface VideoPlayerHandle {
-  seekTo: (time: number) => void
+  seekTo:     (time: number) => void  // tap-to-seek: seek then resume playing
+  beginScrub: () => void              // call on scrub start: pause + record state
+  scrub:      (time: number) => void  // call on every pointer move: smart queued seek
+  endScrub:   () => void              // call on scrub end: resume if was playing
   togglePlay: () => void
 }
 
@@ -23,20 +26,63 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const [showIcon, setShowIcon] = useState(false)
     const iconTimer = useRef<ReturnType<typeof setTimeout>>()
 
+    // ── Scrub state (all refs — no re-renders needed) ─────────────────────
+    // pendingTime: the latest time the user dragged to (null = no pending seek)
+    // isSeeking:   true while the browser is processing a seek
+    // resumeAfter: whether to call play() when scrub ends
+    const pendingTimeRef  = useRef<number | null>(null)
+    const isSeekingRef    = useRef(false)
+    const resumeAfterRef  = useRef(false)
+
+    // Kick off the next pending seek (no-op if nothing pending or already seeking)
+    const flushPendingScrub = useCallback(() => {
+      const v = videoRef.current
+      if (!v || pendingTimeRef.current === null || isSeekingRef.current) return
+      isSeekingRef.current    = true
+      v.currentTime           = pendingTimeRef.current
+      pendingTimeRef.current  = null
+    }, [])
+
     // ── Expose handle ──────────────────────────────────────────────────────
     useImperativeHandle(ref, () => ({
+      // Tap-to-seek: jump then resume playback
       seekTo: (time: number) => {
         const v = videoRef.current
         if (!v) return
         v.currentTime = time
         v.play().catch(() => {})
       },
+
+      // Called once when the user starts dragging the scrubber
+      beginScrub: () => {
+        const v = videoRef.current
+        if (!v) return
+        resumeAfterRef.current = !v.paused   // remember whether it was playing
+        if (!v.paused) v.pause()             // pause so decoder only decodes frames
+      },
+
+      // Called on every pointer-move: queue the seek, let the 'seeked' event chain them
+      scrub: (time: number) => {
+        const v = videoRef.current
+        if (!v) return
+        pendingTimeRef.current = time        // always keep the latest target
+        flushPendingScrub()                  // start a seek only if one isn't already running
+      },
+
+      // Called when the user releases the scrubber
+      endScrub: () => {
+        const v = videoRef.current
+        if (!v) return
+        if (resumeAfterRef.current) v.play().catch(() => {})
+        resumeAfterRef.current = false
+      },
+
       togglePlay: () => {
         const v = videoRef.current
         if (!v) return
         if (v.paused) v.play().catch(() => {}); else v.pause()
       },
-    }))
+    }), [flushPendingScrub])
 
     // ── Flash icon helper ──────────────────────────────────────────────────
     const flashIcon = useCallback(() => {
@@ -80,29 +126,42 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       return () => { (hlsRef.current as { destroy?: () => void } | null)?.destroy?.() }
     }, [feed?.id, feed?.hlsUrl, feed?.mp4Url])
 
-    // ── Time / duration / play-state listeners ────────────────────────────
+    // ── Event listeners ───────────────────────────────────────────────────
     useEffect(() => {
       const video = videoRef.current
       if (!video) return
+
       const onTime     = () => onTimeUpdate?.(video.currentTime)
       const onDuration = () => onDurationChange?.(video.duration)
       const onPlay     = () => setPlaying(true)
       const onPause    = () => setPlaying(false)
+
+      // When a seek completes, immediately process the next pending scrub position.
+      // This chains seeks: decoder finishes → we seek to the latest pointer position
+      // → decoder finishes → repeat. Always converges on where the user actually is.
+      const onSeeked = () => {
+        isSeekingRef.current = false
+        flushPendingScrub()
+      }
+
       video.addEventListener('timeupdate',     onTime)
       video.addEventListener('durationchange', onDuration)
       video.addEventListener('loadedmetadata', onDuration)
       video.addEventListener('play',           onPlay)
       video.addEventListener('pause',          onPause)
+      video.addEventListener('seeked',         onSeeked)
+
       return () => {
         video.removeEventListener('timeupdate',     onTime)
         video.removeEventListener('durationchange', onDuration)
         video.removeEventListener('loadedmetadata', onDuration)
         video.removeEventListener('play',           onPlay)
         video.removeEventListener('pause',          onPause)
+        video.removeEventListener('seeked',         onSeeked)
       }
-    }, [onTimeUpdate, onDurationChange])
+    }, [onTimeUpdate, onDurationChange, flushPendingScrub])
 
-    // ── Space bar = play/pause (when no input focused) ────────────────────
+    // ── Space bar = play/pause ────────────────────────────────────────────
     useEffect(() => {
       function onKey(e: KeyboardEvent) {
         if (e.code !== 'Space') return
@@ -164,13 +223,11 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
               style={{ width: 64, height: 64, background: 'rgba(0,0,0,0.55)' }}
             >
               {playing ? (
-                /* Pause icon */
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
                   <rect x="5" y="4" width="4" height="16" rx="1"/>
                   <rect x="15" y="4" width="4" height="16" rx="1"/>
                 </svg>
               ) : (
-                /* Play icon */
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
                   <polygon points="6,3 20,12 6,21"/>
                 </svg>
@@ -187,7 +244,6 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           onMouseLeave={(e) => (e.currentTarget.style.opacity = '0')}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Mute button */}
           <button
             onClick={toggleMute}
             className="rounded-full flex items-center justify-center transition-colors"
@@ -208,7 +264,6 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
             )}
           </button>
 
-          {/* Fullscreen button */}
           <button
             onClick={() => videoRef.current?.requestFullscreen?.()}
             className="rounded-full flex items-center justify-center"

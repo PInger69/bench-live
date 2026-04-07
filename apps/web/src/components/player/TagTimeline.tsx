@@ -9,7 +9,10 @@ interface TagTimelineProps {
   tags: Tag[]
   currentTime: number
   duration: number
-  onSeek: (time: number) => void
+  onSeek: (time: number) => void        // tap-to-seek (tick clicks, etc.)
+  onScrubStart?: (time: number) => void // drag begins
+  onScrub?: (time: number) => void      // drag move
+  onScrubEnd?: () => void               // drag released
   activeColours?: string[]
   getColour?: (name: string) => string | undefined
   sport?: string
@@ -27,6 +30,7 @@ const ZONE_TINTS = [
 
 export function TagTimeline({
   tags, currentTime, duration, onSeek,
+  onScrubStart, onScrub, onScrubEnd,
   activeColours = [], getColour, sport,
 }: TagTimelineProps) {
   const barRef    = useRef<HTMLDivElement>(null)
@@ -64,19 +68,22 @@ export function TagTimeline({
     const t = timeFromClientX(e.clientX)
     setIsDragging(true)
     setDragTime(t)
-    onSeek(t)
+    if (onScrubStart) onScrubStart(t)
+    else onSeek(t)
   }
 
   function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
     if (!isDragging || duration === 0) return
     const t = timeFromClientX(e.clientX)
     setDragTime(t)
-    onSeek(t)
+    if (onScrub) onScrub(t)
+    else onSeek(t)
   }
 
   function handlePointerUp() {
     setIsDragging(false)
     setDragTime(null)
+    onScrubEnd?.()
   }
 
   // ── Period zone bands ────────────────────────────────────────────────────
