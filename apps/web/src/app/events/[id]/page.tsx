@@ -161,10 +161,10 @@ export default function EventPage() {
 
   if (loading || !event) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-theme-bg">
+      <main className="flex min-h-screen items-center justify-center" style={{ background: 'var(--c-bg)' }}>
         <div className="text-center">
           <div className="h-8 w-8 rounded-full border-2 border-brand-500 border-t-transparent animate-spin mx-auto mb-3" />
-          <p className="text-theme2 text-sm">Loading event...</p>
+          <p className="text-sm" style={{ color: 'var(--c-text2)' }}>Loading event...</p>
         </div>
       </main>
     )
@@ -177,39 +177,45 @@ export default function EventPage() {
   const primaryFeed = event.feeds?.[0] ?? null
 
   return (
-    <main className="h-screen flex flex-col overflow-hidden bg-theme-bg">
+    <main className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--c-bg)' }}>
 
       {/* ── Header ── */}
       <header
-        className="flex-shrink-0 px-3 py-2 flex items-center justify-between gap-2 border-b border-theme"
-        style={{ background: 'var(--c-surface)' }}
+        className="flex-shrink-0 px-3 py-2 flex items-center justify-between gap-2"
+        style={{ background: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)' }}
       >
         <div className="flex items-center gap-2 min-w-0">
           <button
             onClick={() => router.push('/events')}
-            className="text-theme2 hover:text-theme1 text-sm flex-shrink-0 touch-manipulation p-1"
+            className="text-sm flex-shrink-0 touch-manipulation p-1 transition-colors"
+            style={{ color: 'var(--c-text2)' }}
           >
             ←
           </button>
-          <span className="text-theme3 flex-shrink-0">/</span>
-          <h1 className="text-sm font-semibold text-theme1 truncate">{event.name}</h1>
+          <span className="flex-shrink-0" style={{ color: 'var(--c-text3)' }}>/</span>
+          <h1 className="text-sm font-semibold truncate" style={{ color: 'var(--c-text1)' }}>{event.name}</h1>
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0">
           {event.homeTeam && event.visitTeam && (
-            <span className="hidden sm:block text-xs text-theme2 font-medium">
-              {event.homeTeam.shortName} <span className="text-theme3">vs</span> {event.visitTeam.shortName}
+            <span className="hidden sm:block text-xs font-medium" style={{ color: 'var(--c-text2)' }}>
+              {event.homeTeam.shortName}
+              <span style={{ color: 'var(--c-text3)' }}> vs </span>
+              {event.visitTeam.shortName}
             </span>
           )}
 
           {event.status === 'LIVE' ? (
-            <span className="flex items-center gap-1.5 text-xs font-bold rounded-full px-2.5 py-1 bg-red-50 dark:bg-red-900/50 text-red-600 dark:text-red-400 ring-1 ring-red-200 dark:ring-red-700 tag-live">
-              <span className="h-1.5 w-1.5 rounded-full bg-red-500 dark:bg-red-400" /> LIVE
+            <span
+              className="flex items-center gap-1.5 text-xs font-bold rounded-full px-2.5 py-1 tag-live"
+              style={{ background: 'rgba(220,38,38,0.15)', color: '#ef4444', outline: '1px solid rgba(220,38,38,0.4)' }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: '#ef4444' }} /> LIVE
             </span>
           ) : (
             <span
-              className="text-xs rounded-full px-2.5 py-1 text-theme2"
-              style={{ background: 'var(--c-surf2)' }}
+              className="text-xs rounded-full px-2.5 py-1"
+              style={{ background: 'var(--c-surf2)', color: 'var(--c-text2)' }}
             >
               {event.status}
             </span>
@@ -219,7 +225,8 @@ export default function EventPage() {
           {tags.length > 0 && (
             <button
               onClick={() => confirm(`Delete all ${tags.length} tags?`) && clearAllTags(token!)}
-              className="text-theme3 hover:text-red-500 transition-colors p-1 touch-manipulation"
+              className="transition-colors p-1 touch-manipulation hover:text-red-500"
+              style={{ color: 'var(--c-text3)' }}
               title="Clear all tags"
             >
               🗑
@@ -232,8 +239,8 @@ export default function EventPage() {
           {/* ⚙ Settings gear */}
           <button
             onClick={() => setSettingsOpen(true)}
-            className="h-8 w-8 rounded-full flex items-center justify-center text-theme2 hover:text-theme1 transition-colors touch-manipulation"
-            style={{ background: 'var(--c-surf2)' }}
+            className="h-8 w-8 rounded-full flex items-center justify-center transition-colors touch-manipulation"
+            style={{ background: 'var(--c-surf2)', color: 'var(--c-text2)' }}
             title="Tag Names & Colours"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

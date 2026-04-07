@@ -6,7 +6,6 @@ interface TagButtonsProps {
   names: string[]
   side: 'left' | 'right'
   getColour: (name: string) => string
-  /** Optional: returns a custom display label for a tag key */
   getName?: (name: string) => string
   disabled: boolean
   tagging: string | null
@@ -17,14 +16,13 @@ interface TagButtonsProps {
 export function TagButtons({ names, side, getColour, getName, disabled, tagging, lastTagged, onTag }: TagButtonsProps) {
   return (
     <div
-      className={cn(
-        'flex flex-col gap-1.5 py-2 px-2 overflow-y-auto',
-        'bg-gray-50 dark:bg-gray-950',
-        side === 'left'
-          ? 'border-r border-gray-200 dark:border-gray-800'
-          : 'border-l border-gray-200 dark:border-gray-800'
-      )}
-      style={{ width: '158px', minWidth: '140px', maxWidth: '180px' }}
+      className="flex flex-col gap-1.5 py-2 px-2 overflow-y-auto"
+      style={{
+        width: 158, minWidth: 140, maxWidth: 180,
+        background: 'var(--c-bg)',
+        borderLeft:  side === 'right' ? '1px solid var(--c-border)' : undefined,
+        borderRight: side === 'left'  ? '1px solid var(--c-border)' : undefined,
+      }}
     >
       {names.map((name) => {
         const colour    = getColour(name)
@@ -64,24 +62,16 @@ function TagButton({ name, label, colour, side, isTagging, wasTagged, disabled, 
       onPointerDown={() => !disabled && onTag(name)}
       disabled={disabled}
       className={cn(
-        // Base
-        'relative w-full overflow-hidden group',
+        'relative w-full overflow-hidden',
         'min-h-[50px] px-3 py-2.5',
         'touch-manipulation select-none',
         'transition-all duration-100',
-        // Shape — square on the colour-bar side, rounded on outer
-        side === 'left'
-          ? 'rounded-l-sm rounded-r-xl'
-          : 'rounded-r-sm rounded-l-xl',
-        // States
+        side === 'left'  ? 'rounded-l-sm rounded-r-xl' : 'rounded-r-sm rounded-l-xl',
         isTagging && 'scale-95 opacity-70',
-        wasTagged && 'scale-97',
         disabled && !isTagging && 'opacity-50 cursor-default',
         !disabled && 'active:scale-95',
       )}
       style={{
-        // CSS vars --tag-btn-pct and --tag-btn-base are set in globals.css
-        // per theme, so color-mix automatically adapts to light/dark mode.
         background: wasTagged
           ? `color-mix(in srgb, ${colour} var(--tag-active-pct), var(--tag-btn-base))`
           : `color-mix(in srgb, ${colour} var(--tag-btn-pct), var(--tag-btn-base))`,
@@ -90,24 +80,19 @@ function TagButton({ name, label, colour, side, isTagging, wasTagged, disabled, 
         boxShadow: wasTagged ? `inset 0 0 0 1px ${colour}60` : 'none',
       }}
     >
-      {/* Flash overlay on tag */}
       {wasTagged && (
-        <div
-          className="absolute inset-0 opacity-20 animate-ping"
-          style={{ background: colour }}
-        />
+        <div className="absolute inset-0 opacity-20 animate-ping" style={{ background: colour }} />
       )}
 
-      {/* Text */}
       <span
         className={cn(
           'relative block text-xs font-bold leading-tight tracking-wide',
           side === 'left' ? 'text-right' : 'text-left',
-          wasTagged
-            ? 'text-gray-900 dark:text-white'
-            : 'text-gray-700 dark:text-gray-200',
         )}
-        style={{ textShadow: wasTagged ? `0 0 8px ${colour}80` : undefined }}
+        style={{
+          color: 'var(--c-text1)',
+          textShadow: wasTagged ? `0 0 8px ${colour}80` : undefined,
+        }}
       >
         {isTagging ? (
           <span className="inline-flex gap-0.5 items-center">
@@ -118,13 +103,12 @@ function TagButton({ name, label, colour, side, isTagging, wasTagged, disabled, 
         ) : label}
       </span>
 
-      {/* Colour indicator dot */}
       <span
         className="absolute top-1.5 h-1.5 w-1.5 rounded-full opacity-70"
         style={{
           background: colour,
-          left:  side === 'left'  ? '6px' : undefined,
-          right: side === 'right' ? '6px' : undefined,
+          left:  side === 'left'  ? 6 : undefined,
+          right: side === 'right' ? 6 : undefined,
         }}
       />
     </button>

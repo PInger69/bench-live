@@ -2,77 +2,47 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  /* ── Semantic colour tokens — swap automatically with .dark class ─────── */
-  :root {
-    /* Surfaces */
-    --c-bg:       #f9fafb;   /* gray-50  */
-    --c-surface:  #ffffff;   /* white    */
-    --c-surf2:    #f3f4f6;   /* gray-100 */
-    --c-surf3:    #e5e7eb;   /* gray-200 */
+/* ── CSS custom properties — pure CSS, no Tailwind compilation needed ────── */
+/* These swap automatically when JS adds/removes the `dark` class on <html>  */
 
-    /* Borders */
-    --c-border:   #e5e7eb;   /* gray-200 */
-    --c-border2:  #d1d5db;   /* gray-300 */
-
-    /* Text */
-    --c-text1:    #111827;   /* gray-900 */
-    --c-text2:    #6b7280;   /* gray-500 */
-    --c-text3:    #9ca3af;   /* gray-400 */
-
-    /* Tag button color-mix */
-    --tag-btn-pct:    8%;
-    --tag-btn-base:   #f9fafb;
-    --tag-active-pct: 18%;
-  }
-
-  .dark {
-    /* Surfaces */
-    --c-bg:       #030712;   /* gray-950 */
-    --c-surface:  #111827;   /* gray-900 */
-    --c-surf2:    #1f2937;   /* gray-800 */
-    --c-surf3:    #374151;   /* gray-700 */
-
-    /* Borders */
-    --c-border:   #1f2937;   /* gray-800 */
-    --c-border2:  #374151;   /* gray-700 */
-
-    /* Text */
-    --c-text1:    #f9fafb;   /* gray-50  */
-    --c-text2:    #9ca3af;   /* gray-400 */
-    --c-text3:    #6b7280;   /* gray-500 */
-
-    /* Tag button color-mix */
-    --tag-btn-pct:    12%;
-    --tag-btn-base:   #111827;
-    --tag-active-pct: 28%;
-  }
-
-  /* Apply tokens to root elements so the whole page responds to theme
-     even before any Tailwind dark: class is applied */
-  html {
-    background-color: var(--c-bg);
-    color: var(--c-text1);
-  }
-
-  body {
-    @apply antialiased;
-    background-color: var(--c-bg);
-    color: var(--c-text1);
-  }
+:root {
+  --c-bg:       #f9fafb;
+  --c-surface:  #ffffff;
+  --c-surf2:    #f3f4f6;
+  --c-surf3:    #e5e7eb;
+  --c-border:   #e5e7eb;
+  --c-border2:  #d1d5db;
+  --c-text1:    #111827;
+  --c-text2:    #6b7280;
+  --c-text3:    #9ca3af;
+  --tag-btn-pct:    8%;
+  --tag-btn-base:   #f9fafb;
+  --tag-active-pct: 18%;
 }
 
-/* Convenience utilities that use our tokens — available everywhere */
-@layer utilities {
-  .bg-theme-bg      { background-color: var(--c-bg);      }
-  .bg-theme-surface { background-color: var(--c-surface);  }
-  .bg-theme-surf2   { background-color: var(--c-surf2);    }
-  .bg-theme-surf3   { background-color: var(--c-surf3);    }
-  .border-theme     { border-color:     var(--c-border);   }
-  .border-theme2    { border-color:     var(--c-border2);  }
-  .text-theme1      { color: var(--c-text1); }
-  .text-theme2      { color: var(--c-text2); }
-  .text-theme3      { color: var(--c-text3); }
+.dark {
+  --c-bg:       #030712;
+  --c-surface:  #111827;
+  --c-surf2:    #1f2937;
+  --c-surf3:    #374151;
+  --c-border:   #1f2937;
+  --c-border2:  #374151;
+  --c-text1:    #f9fafb;
+  --c-text2:    #9ca3af;
+  --c-text3:    #6b7280;
+  --tag-btn-pct:    12%;
+  --tag-btn-base:   #111827;
+  --tag-active-pct: 28%;
+}
+
+/* Apply theme to root — pure CSS, works with zero Tailwind */
+html, body {
+  background-color: var(--c-bg);
+  color: var(--c-text1);
+}
+
+@layer base {
+  body { @apply antialiased; }
 }
 
 /* Video player */

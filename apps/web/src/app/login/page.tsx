@@ -28,47 +28,75 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-theme-bg p-4">
+    <main
+      className="flex min-h-screen items-center justify-center p-4"
+      style={{ background: 'var(--c-bg)' }}
+    >
       <div className="fixed top-4 right-4">
         <ThemeToggle />
       </div>
 
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-theme1">Bench Live</h1>
-          <p className="text-theme2 mt-1 text-sm">Sign in to your account</p>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--c-text1)' }}>Bench Live</h1>
+          <p className="mt-1 text-sm" style={{ color: 'var(--c-text2)' }}>Sign in to your account</p>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="bg-theme-surface rounded-xl p-6 space-y-4 border border-theme shadow-sm"
+          className="rounded-xl p-6 space-y-4 shadow-sm"
+          style={{
+            background: 'var(--c-surface)',
+            border: '1px solid var(--c-border)',
+          }}
         >
           {error && (
-            <div className="rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-600 dark:text-red-400">
+            <div
+              className="rounded-lg px-4 py-3 text-sm"
+              style={{
+                background: 'rgba(220,38,38,0.08)',
+                border: '1px solid rgba(220,38,38,0.3)',
+                color: '#ef4444',
+              }}
+            >
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-theme1 mb-1.5">Email</label>
+            <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--c-text1)' }}>
+              Email
+            </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full rounded-lg bg-theme-surf2 border border-theme px-3 py-2 text-theme1 placeholder-[var(--c-text3)] focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              style={{
+                background: 'var(--c-surf2)',
+                border: '1px solid var(--c-border)',
+                color: 'var(--c-text1)',
+              }}
               placeholder="you@example.com"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-theme1 mb-1.5">Password</label>
+            <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--c-text1)' }}>
+              Password
+            </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full rounded-lg bg-theme-surf2 border border-theme px-3 py-2 text-theme1 placeholder-[var(--c-text3)] focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              style={{
+                background: 'var(--c-surf2)',
+                border: '1px solid var(--c-border)',
+                color: 'var(--c-text1)',
+              }}
               placeholder="••••••••"
             />
           </div>
@@ -82,7 +110,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-center text-xs text-theme3 mt-6">
+        <p className="text-center text-xs mt-6" style={{ color: 'var(--c-text3)' }}>
           Demo: coach@benchlive.com / coach123
         </p>
       </div>

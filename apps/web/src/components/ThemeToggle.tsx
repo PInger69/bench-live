@@ -8,15 +8,13 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
   return (
     <button
       onClick={toggle}
-      className={`h-8 w-8 rounded-full flex items-center justify-center transition-colors
-        bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900
-        dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-400 dark:hover:text-white
-        touch-manipulation ${className}`}
+      className={`h-8 w-8 rounded-full flex items-center justify-center transition-colors touch-manipulation ${className}`}
+      style={{ background: 'var(--c-surf2)', color: 'var(--c-text2)' }}
       title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
     >
       {isDark ? (
-        /* Sun — shown in dark mode to invite switching to light */
+        /* Sun */
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="5"/>
           <line x1="12" y1="1" x2="12" y2="3"/>
@@ -29,7 +27,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
           <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
         </svg>
       ) : (
-        /* Moon — shown in light mode to invite switching to dark */
+        /* Moon */
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
         </svg>
