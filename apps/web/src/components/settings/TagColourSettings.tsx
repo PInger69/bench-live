@@ -1,21 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { cn } from '@/lib/utils'
+import { useState, useEffect, useRef } from 'react'
 import { TAG_SETS } from '@/components/tagger/ControlsBar'
 import { type TagColourMap, type TagNameMap, COLOUR_DEFAULTS } from '@/hooks/useTagColours'
 
+// Extended palette — 20 colours in a 4×5 grid
 export const PALETTE = [
-  { value: '#EF4444', label: 'Red'    },
-  { value: '#F97316', label: 'Orange' },
-  { value: '#F59E0B', label: 'Amber'  },
-  { value: '#10B981', label: 'Green'  },
-  { value: '#14B8A6', label: 'Teal'   },
-  { value: '#3B82F6', label: 'Blue'   },
-  { value: '#6366F1', label: 'Indigo' },
-  { value: '#8B5CF6', label: 'Purple' },
-  { value: '#EC4899', label: 'Pink'   },
-  { value: '#6B7280', label: 'Gray'   },
+  '#EF4444', '#F97316', '#F59E0B', '#EAB308',
+  '#84CC16', '#10B981', '#14B8A6', '#06B6D4',
+  '#3B82F6', '#6366F1', '#8B5CF6', '#A855F7',
+  '#EC4899', '#F43F5E', '#6B7280', '#1F2937',
+  '#FFFFFF', '#FCD34D', '#34D399', '#7DD3FC',
 ]
 
 const SPORTS = [
@@ -44,22 +39,55 @@ export function TagColourSettings({
   colourMap, nameMap,
   onSetColour, onSetName, onResetAll,
 }: TagColourSettingsProps) {
-  const [viewSport, setViewSport] = useState(activeSport)
+  const [viewSport, setViewSport]       = useState(activeSport)
   const [openPickerFor, setOpenPickerFor] = useState<string | null>(null)
+  const [hexDraft, setHexDraft]         = useState<Record<string, string>>({})
+  const pickerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => { if (!open) setOpenPickerFor(null) }, [open])
-
-  // Keep the tag list in sync when the active sport changes externally
   useEffect(() => { setViewSport(activeSport) }, [activeSport])
+
+  // Close picker when clicking outside
+  useEffect(() => {
+    function onDown(e: MouseEvent) {
+      if (openPickerFor && pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setOpenPickerFor(null)
+      }
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [openPickerFor])
 
   if (!open) return null
 
   const tagKeys = TAG_SETS[viewSport] ?? TAG_SETS.GENERIC
 
-  function handleSportClick(key: string) {
+  function handleSportChange(key: string) {
     setViewSport(key)
     onSportChange(key)
     setOpenPickerFor(null)
+  }
+
+  function handleSwatchClick(tagKey: string, colour: string) {
+    onSetColour(tagKey, colour)
+    setHexDraft((d) => ({ ...d, [tagKey]: colour }))
+    setOpenPickerFor(null)
+  }
+
+  function handleHexInput(tagKey: string, val: string) {
+    setHexDraft((d) => ({ ...d, [tagKey]: val }))
+    // Apply immediately if valid 6-char hex
+    if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+      onSetColour(tagKey, val)
+    }
+  }
+
+  function getColour(tagKey: string) {
+    return colourMap[tagKey] ?? COLOUR_DEFAULTS[tagKey] ?? '#3B82F6'
+  }
+
+  function getHex(tagKey: string) {
+    return hexDraft[tagKey] ?? getColour(tagKey)
   }
 
   return (
@@ -67,122 +95,162 @@ export function TagColourSettings({
       {/* Backdrop */}
       <div
         className="fixed inset-0 z-40 backdrop-blur-sm"
-        style={{ background: 'rgba(0,0,0,0.45)' }}
+        style={{ background: 'rgba(0,0,0,0.4)' }}
         onClick={onClose}
       />
 
       {/* Drawer */}
       <aside
-        className="fixed right-0 top-0 bottom-0 w-full max-w-sm z-50 flex flex-col shadow-2xl border-l border-theme"
-        style={{ background: 'var(--c-surface)' }}
+        className="fixed right-0 top-0 bottom-0 w-80 z-50 flex flex-col shadow-2xl"
+        style={{ background: 'var(--c-surface)', borderLeft: '1px solid var(--c-border)' }}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-theme">
+        {/* ── Header ── */}
+        <div
+          className="flex items-center justify-between px-5 py-4"
+          style={{ borderBottom: '1px solid var(--c-border)' }}
+        >
           <div>
-            <h2 className="text-base font-bold" style={{ color: 'var(--c-text1)' }}>Tag Names</h2>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--c-text2)' }}>Rename tags and assign colours</p>
+            <h2 className="text-sm font-bold tracking-wide" style={{ color: 'var(--c-text1)' }}>Tag Names</h2>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--c-text3)' }}>Rename tags · assign colours</p>
           </div>
           <button
             onClick={onClose}
-            className="h-8 w-8 rounded-full flex items-center justify-center transition-colors"
+            className="h-7 w-7 rounded-full flex items-center justify-center text-xs transition-colors"
             style={{ background: 'var(--c-surf2)', color: 'var(--c-text2)' }}
           >
             ✕
           </button>
         </div>
 
-        {/* Sport / Template selector */}
-        <div className="px-4 pt-3 pb-2 border-b border-theme">
-          <p className="text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: 'var(--c-text3)' }}>
+        {/* ── Sport dropdown ── */}
+        <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--c-border)' }}>
+          <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: 'var(--c-text3)' }}>
             Sport Template
-          </p>
-          <div className="flex flex-wrap gap-1.5">
+          </label>
+          <select
+            value={viewSport}
+            onChange={(e) => handleSportChange(e.target.value)}
+            className="w-full rounded-lg px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500 appearance-none"
+            style={{
+              background: 'var(--c-surf2)',
+              color: 'var(--c-text1)',
+              border: '1px solid var(--c-border2)',
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'right 10px center',
+              paddingRight: '32px',
+            }}
+          >
             {SPORTS.map((s) => (
-              <button
-                key={s.key}
-                onClick={() => handleSportClick(s.key)}
-                className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium touch-manipulation transition-colors"
-                style={
-                  viewSport === s.key
-                    ? { background: '#2563EB', color: '#fff' }
-                    : { background: 'var(--c-surf2)', color: 'var(--c-text2)' }
-                }
-              >
-                {s.label}
-              </button>
+              <option key={s.key} value={s.key}>{s.label}</option>
             ))}
-          </div>
+          </select>
         </div>
 
-        {/* Tag list */}
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+        {/* ── Tag list ── */}
+        <div className="flex-1 overflow-y-auto px-3 py-2 space-y-px" ref={pickerRef}>
           {tagKeys.map((tagKey) => {
-            const currentColour = colourMap[tagKey] ?? COLOUR_DEFAULTS[tagKey] ?? '#3B82F6'
-            const currentName   = nameMap[tagKey] ?? tagKey
-            const pickerOpen    = openPickerFor === tagKey
+            const colour     = getColour(tagKey)
+            const name       = nameMap[tagKey] ?? tagKey
+            const pickerOpen = openPickerFor === tagKey
+            const hexVal     = getHex(tagKey)
 
             return (
-              <div
-                key={tagKey}
-                className="rounded-xl overflow-hidden"
-                style={{ background: 'var(--c-surf2)', outline: `1px solid var(--c-border)` }}
-              >
-                {/* Row */}
-                <div className="flex items-center gap-2.5 px-3 py-2.5">
-                  {/* Colour swatch */}
+              <div key={tagKey}>
+                {/* Tag row */}
+                <div
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-default"
+                  style={{ background: pickerOpen ? 'var(--c-surf2)' : 'transparent' }}
+                >
+                  {/* Colour preview chip — click to open picker */}
                   <button
                     onClick={() => setOpenPickerFor(pickerOpen ? null : tagKey)}
-                    className={cn('flex-shrink-0 h-7 w-7 rounded-full touch-manipulation shadow-sm transition-all', pickerOpen && 'scale-110')}
+                    title="Change colour"
+                    className="flex-shrink-0 rounded-md transition-all touch-manipulation"
                     style={{
-                      background: currentColour,
-                      outline: pickerOpen ? `2px solid var(--c-text1)` : undefined,
-                      outlineOffset: pickerOpen ? '2px' : undefined,
+                      width: 28,
+                      height: 20,
+                      background: colour,
+                      outline: pickerOpen ? '2px solid var(--c-text1)' : '1px solid rgba(0,0,0,0.2)',
+                      outlineOffset: pickerOpen ? '2px' : '0',
+                      transform: pickerOpen ? 'scale(1.1)' : undefined,
                     }}
-                    title="Pick colour"
                   />
 
                   {/* Editable name */}
                   <input
                     type="text"
-                    value={currentName}
+                    value={name}
                     onChange={(e) => onSetName(tagKey, e.target.value)}
                     onBlur={(e) => { if (!e.target.value.trim()) onSetName(tagKey, tagKey) }}
-                    className="flex-1 bg-transparent text-sm font-semibold border-b border-transparent focus:outline-none py-0.5 transition-colors"
-                    style={{
-                      color: 'var(--c-text1)',
-                      borderBottomColor: 'transparent',
-                    }}
-                    onFocus={(e) => { e.target.style.borderBottomColor = 'var(--c-border2)' }}
+                    className="flex-1 bg-transparent text-sm font-medium focus:outline-none min-w-0"
+                    style={{ color: 'var(--c-text1)' }}
                     placeholder={tagKey}
                   />
 
                   {/* Chevron */}
                   <svg
-                    className={cn('w-3.5 h-3.5 flex-shrink-0 transition-transform', pickerOpen && 'rotate-180')}
-                    style={{ color: 'var(--c-text3)' }}
+                    className="flex-shrink-0 transition-transform"
+                    style={{
+                      width: 14, height: 14,
+                      color: 'var(--c-text3)',
+                      transform: pickerOpen ? 'rotate(180deg)' : undefined,
+                    }}
                     viewBox="0 0 20 20" fill="currentColor"
                   >
                     <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd"/>
                   </svg>
                 </div>
 
-                {/* Colour picker */}
+                {/* ── Colour picker panel ── */}
                 {pickerOpen && (
-                  <div className="px-3 pb-3 pt-1 border-t border-theme">
-                    <p className="text-xs mb-2 text-theme3">Choose a colour</p>
-                    <div className="flex flex-wrap gap-2">
+                  <div
+                    className="mx-2 mb-2 rounded-xl p-3 space-y-3"
+                    style={{
+                      background: 'var(--c-bg)',
+                      border: '1px solid var(--c-border)',
+                    }}
+                  >
+                    {/* Current colour + hex input */}
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="rounded-lg flex-shrink-0 shadow-sm"
+                        style={{ width: 36, height: 36, background: colour }}
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center rounded-lg overflow-hidden border" style={{ borderColor: 'var(--c-border2)' }}>
+                          <span className="px-2 text-xs font-mono font-bold" style={{ color: 'var(--c-text3)', background: 'var(--c-surf2)' }}>#</span>
+                          <input
+                            type="text"
+                            value={hexVal.replace('#', '')}
+                            maxLength={6}
+                            onChange={(e) => handleHexInput(tagKey, '#' + e.target.value)}
+                            className="flex-1 px-2 py-1.5 text-xs font-mono focus:outline-none"
+                            style={{ background: 'var(--c-surf2)', color: 'var(--c-text1)' }}
+                            placeholder="3B82F6"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Swatch grid — 4 columns of rounded squares */}
+                    <div className="grid grid-cols-10 gap-1.5">
                       {PALETTE.map((c) => (
                         <button
-                          key={c.value}
-                          title={c.label}
-                          onClick={() => { onSetColour(tagKey, c.value); setOpenPickerFor(null) }}
-                          className="h-8 w-8 rounded-full touch-manipulation transition-all flex-shrink-0 shadow-sm"
+                          key={c}
+                          onClick={() => handleSwatchClick(tagKey, c)}
+                          className="touch-manipulation transition-all"
+                          title={c}
                           style={{
-                            background: c.value,
-                            opacity: currentColour === c.value ? 1 : 0.6,
-                            transform: currentColour === c.value ? 'scale(1.15)' : undefined,
-                            outline: currentColour === c.value ? `2px solid var(--c-text1)` : undefined,
-                            outlineOffset: currentColour === c.value ? '2px' : undefined,
+                            width: '100%',
+                            aspectRatio: '1',
+                            background: c,
+                            borderRadius: 5,
+                            outline: colour === c
+                              ? '2px solid var(--c-text1)'
+                              : '1px solid rgba(0,0,0,0.15)',
+                            outlineOffset: colour === c ? '1px' : '0',
+                            transform: colour === c ? 'scale(1.15)' : undefined,
                           }}
                         />
                       ))}
@@ -194,8 +262,11 @@ export function TagColourSettings({
           })}
         </div>
 
-        {/* Footer */}
-        <div className="px-4 py-3 border-t border-theme flex items-center justify-between">
+        {/* ── Footer ── */}
+        <div
+          className="px-4 py-3 flex items-center justify-between"
+          style={{ borderTop: '1px solid var(--c-border)' }}
+        >
           <button
             onClick={() => { if (confirm('Reset all tag names and colours to defaults?')) onResetAll() }}
             className="text-xs transition-colors"
