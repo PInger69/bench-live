@@ -193,43 +193,90 @@ export function TagTimeline({
           )
         })}
 
-        {/* Playhead */}
+        {/* ── Playhead ── */}
         {duration > 0 && (
           <div
             className="absolute inset-y-0 pointer-events-none z-10"
             style={{
               left: `${progress}%`,
-              transform: 'translateX(-1px)',
-              // No CSS transition while dragging — instant visual feedback
-              transition: isDragging ? 'none' : undefined,
+              transform: 'translateX(-50%)',
             }}
           >
-            {/* Vertical rule */}
+            {/* Atmospheric outer glow column — wide, very low opacity */}
             <div
-              className="absolute inset-y-0 left-0"
+              className="absolute inset-y-0"
               style={{
-                width: 2,
-                background: 'var(--c-text1)',
+                left: '50%',
+                width: 1,
+                transform: 'translateX(-50%)',
                 boxShadow: isDragging
-                  ? '0 0 10px rgba(255,255,255,0.5), 0 0 3px rgba(255,255,255,0.8)'
-                  : '0 0 6px rgba(255,255,255,0.25)',
+                  ? '0 0 40px 18px rgba(100,160,255,0.18)'
+                  : '0 0 28px 12px rgba(100,160,255,0.10)',
+                transition: 'box-shadow 150ms',
               }}
             />
-            {/* Diamond head */}
+
+            {/* Needle — gradient from solid at top to ghost at bottom */}
             <div
-              className="absolute left-1/2 top-1"
+              className="absolute inset-y-0"
               style={{
-                width:  isDragging ? 10 : 8,
-                height: isDragging ? 10 : 8,
-                background: 'var(--c-text1)',
-                borderRadius: 2,
-                transform: 'translateX(-50%) rotate(45deg)',
+                left: '50%',
+                width: 1.5,
+                transform: 'translateX(-50%)',
+                background: 'linear-gradient(to bottom, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.65) 45%, rgba(255,255,255,0.08) 100%)',
                 boxShadow: isDragging
-                  ? '0 0 8px rgba(255,255,255,0.6)'
-                  : '0 0 4px rgba(255,255,255,0.3)',
-                transition: 'width 100ms, height 100ms, box-shadow 100ms',
+                  ? '0 0 4px 1.5px rgba(255,255,255,0.9), 0 0 12px 4px rgba(180,215,255,0.65), 0 0 24px 8px rgba(130,180,255,0.30)'
+                  : '0 0 3px 1px rgba(255,255,255,0.75), 0 0 10px 3px rgba(180,215,255,0.40), 0 0 20px 7px rgba(130,180,255,0.18)',
+                transition: 'box-shadow 150ms',
               }}
             />
+
+            {/* Sphere handle */}
+            <div
+              style={{
+                position: 'absolute',
+                top: 3,
+                left: '50%',
+                width:  isDragging ? 18 : 14,
+                height: isDragging ? 18 : 14,
+                transform: 'translateX(-50%)',
+                borderRadius: '50%',
+                // Subtle inner sphere shading — light source top-left
+                background: 'radial-gradient(circle at 36% 34%, #ffffff 0%, #ddeeff 55%, #b8d4ff 100%)',
+                boxShadow: isDragging
+                  ? [
+                      '0 0 0 2px rgba(255,255,255,0.25)',        // outer ring
+                      '0 1px 3px rgba(0,0,0,0.35)',              // drop shadow for depth
+                      '0 0 10px 4px rgba(255,255,255,0.95)',     // tight white corona
+                      '0 0 22px 8px rgba(180,215,255,0.75)',     // mid blue-white
+                      '0 0 42px 16px rgba(120,175,255,0.40)',    // far blue
+                      '0 0 70px 28px rgba(90,150,255,0.18)',     // ambient
+                    ].join(', ')
+                  : [
+                      '0 0 0 1.5px rgba(255,255,255,0.18)',      // outer ring
+                      '0 1px 3px rgba(0,0,0,0.28)',              // drop shadow
+                      '0 0 8px 3px rgba(255,255,255,0.90)',      // tight white corona
+                      '0 0 18px 6px rgba(180,215,255,0.55)',     // mid blue-white
+                      '0 0 32px 12px rgba(120,175,255,0.25)',    // far blue
+                    ].join(', '),
+                transition: 'width 120ms, height 120ms, box-shadow 150ms, top 120ms',
+              }}
+            >
+              {/* Specular highlight dot — top-left glint */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '22%',
+                  left: '24%',
+                  width:  isDragging ? 4 : 3,
+                  height: isDragging ? 4 : 3,
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.85)',
+                  filter: 'blur(0.5px)',
+                  transition: 'width 120ms, height 120ms',
+                }}
+              />
+            </div>
           </div>
         )}
 
