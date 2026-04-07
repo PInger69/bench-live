@@ -231,52 +231,50 @@ export function TagTimeline({
               }}
             />
 
-            {/* Sphere handle */}
-            <div
+            {/* Sphere handle — SVG for perfect sub-pixel anti-aliasing */}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
               style={{
                 position: 'absolute',
-                top: 3,
+                top: 2,
                 left: '50%',
-                width:  isDragging ? 18 : 14,
-                height: isDragging ? 18 : 14,
+                width:  isDragging ? 20 : 15,
+                height: isDragging ? 20 : 15,
                 transform: 'translateX(-50%)',
-                borderRadius: '50%',
-                // Subtle inner sphere shading — light source top-left
-                background: 'radial-gradient(circle at 36% 34%, #ffffff 0%, #ddeeff 55%, #b8d4ff 100%)',
-                boxShadow: isDragging
+                overflow: 'visible',
+                // drop-shadow follows the circle shape exactly — no box-model pixels
+                filter: isDragging
                   ? [
-                      '0 0 0 2px rgba(255,255,255,0.25)',        // outer ring
-                      '0 1px 3px rgba(0,0,0,0.35)',              // drop shadow for depth
-                      '0 0 10px 4px rgba(255,255,255,0.95)',     // tight white corona
-                      '0 0 22px 8px rgba(180,215,255,0.75)',     // mid blue-white
-                      '0 0 42px 16px rgba(120,175,255,0.40)',    // far blue
-                      '0 0 70px 28px rgba(90,150,255,0.18)',     // ambient
-                    ].join(', ')
+                      'drop-shadow(0 0 5px rgba(255,255,255,1))',
+                      'drop-shadow(0 0 12px rgba(200,228,255,0.95))',
+                      'drop-shadow(0 0 26px rgba(150,200,255,0.65))',
+                      'drop-shadow(0 0 48px rgba(100,170,255,0.35))',
+                    ].join(' ')
                   : [
-                      '0 0 0 1.5px rgba(255,255,255,0.18)',      // outer ring
-                      '0 1px 3px rgba(0,0,0,0.28)',              // drop shadow
-                      '0 0 8px 3px rgba(255,255,255,0.90)',      // tight white corona
-                      '0 0 18px 6px rgba(180,215,255,0.55)',     // mid blue-white
-                      '0 0 32px 12px rgba(120,175,255,0.25)',    // far blue
-                    ].join(', '),
-                transition: 'width 120ms, height 120ms, box-shadow 150ms, top 120ms',
+                      'drop-shadow(0 0 4px rgba(255,255,255,0.95))',
+                      'drop-shadow(0 0 10px rgba(200,228,255,0.75))',
+                      'drop-shadow(0 0 20px rgba(150,200,255,0.42))',
+                      'drop-shadow(0 0 36px rgba(100,170,255,0.20))',
+                    ].join(' '),
+                transition: 'filter 150ms, width 120ms, height 120ms',
               }}
             >
-              {/* Specular highlight dot — top-left glint */}
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '22%',
-                  left: '24%',
-                  width:  isDragging ? 4 : 3,
-                  height: isDragging ? 4 : 3,
-                  borderRadius: '50%',
-                  background: 'rgba(255,255,255,0.85)',
-                  filter: 'blur(0.5px)',
-                  transition: 'width 120ms, height 120ms',
-                }}
-              />
-            </div>
+              <defs>
+                <radialGradient id="ph-fill" cx="37%" cy="33%" r="62%" gradientUnits="objectBoundingBox">
+                  <stop offset="0%"   stopColor="#ffffff" />
+                  <stop offset="52%"  stopColor="#e6f1ff" />
+                  <stop offset="100%" stopColor="#b8d2ff" />
+                </radialGradient>
+                <filter id="ph-glint">
+                  <feGaussianBlur stdDeviation="0.6" />
+                </filter>
+              </defs>
+              {/* Main sphere — perfect vector circle */}
+              <circle cx="10" cy="10" r="9" fill="url(#ph-fill)" />
+              {/* Specular glint — top-left, SVG-blurred so it's smooth */}
+              <circle cx="6.5" cy="6.2" r="2.6" fill="white" opacity="0.72" filter="url(#ph-glint)" />
+            </svg>
           </div>
         )}
 
