@@ -45,12 +45,14 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
     // ── Expose handle ──────────────────────────────────────────────────────
     useImperativeHandle(ref, () => ({
-      // Tap-to-seek: jump then resume playback
+      // Tap-to-seek: jump to time, preserve current play/pause state
       seekTo: (time: number) => {
         const v = videoRef.current
         if (!v) return
         v.currentTime = time
-        v.play().catch(() => {})
+        // Do NOT call play() here — browsers maintain play/pause state through
+        // seeks automatically. Calling play() here would restart audio on a
+        // video the user deliberately paused.
       },
 
       // Called once when the user starts dragging the scrubber
