@@ -57,7 +57,6 @@ export default function EventPage() {
   // Tagger state
   const [activeSport, setActiveSport] = useState('SOCCER')
   const [activePeriod, setActivePeriod] = useState('1H')
-  const [selectedPlayers, setSelectedPlayers] = useState<string[]>([])
   const [rating, setRating] = useState(0)
   const [coachPick, setCoachPick] = useState(false)
   const [comment, setComment] = useState('')
@@ -89,7 +88,6 @@ export default function EventPage() {
           duration: 30,
           colour: getColour(tagKey),
           period: activePeriod,
-          players: selectedPlayers,
           comment: comment || undefined,
           rating: rating || undefined,
           coachPick,
@@ -300,14 +298,12 @@ export default function EventPage() {
             setComment={setComment}
             onSportChange={handleSportChange}
             onPeriodChange={setActivePeriod}
-            onPlayersChange={setSelectedPlayers}
             onRatingChange={setRating}
             onCoachPickChange={setCoachPick}
             activeColours={activeColours}
             onColourFilterChange={setActiveColours}
             activeSport={activeSport}
             activePeriod={activePeriod}
-            selectedPlayers={selectedPlayers}
             rating={rating}
             coachPick={coachPick}
             lastTagged={lastTagged}
