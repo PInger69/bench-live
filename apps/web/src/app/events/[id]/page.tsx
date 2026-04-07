@@ -7,7 +7,7 @@ import { useEventDetailStore } from '@/store/eventDetail'
 import { VideoPlayer, type VideoPlayerHandle } from '@/components/player/VideoPlayer'
 import { TagTimeline } from '@/components/player/TagTimeline'
 import { TagButtons } from '@/components/tagger/TagButtons'
-import { ControlsBar, PERIODS, TAG_SETS } from '@/components/tagger/ControlsBar'
+import { ControlsBar, PERIODS, TAG_SETS, detectPeriod } from '@/components/tagger/ControlsBar'
 import { TagColourSettings } from '@/components/settings/TagColourSettings'
 import { useTagColours } from '@/hooks/useTagColours'
 import { ThemeToggle } from '@/components/ThemeToggle'
@@ -56,20 +56,32 @@ export default function EventPage() {
 
   // Tagger state
   const [activeSport, setActiveSport] = useState('SOCCER')
-  const [activePeriod, setActivePeriod] = useState('1H')
+  // activePeriod tracks user manual override; null = always auto-detect from time
+  const [periodOverride, setPeriodOverride] = useState<string | null>(null)
   const [rating, setRating] = useState(0)
   const [coachPick, setCoachPick] = useState(false)
   const [comment, setComment] = useState('')
   const [tagging, setTagging] = useState<string | null>(null)
   const [lastTagged, setLastTagged] = useState<string | null>(null)
 
+  // The active period: user override if set, otherwise auto-detected from video time
+  const activePeriod = periodOverride ?? detectPeriod(currentTime, activeSport)
+
   function handleSportChange(sport: string) {
     setActiveSport(sport)
-    setActivePeriod(PERIODS[sport]?.[0] ?? '1H')
+    setPeriodOverride(null) // clear override when sport changes
+  }
+
+  function handlePeriodChange(period: string) {
+    // If user taps the already-auto-detected period, clear the override
+    // If user taps a different one, set it as override
+    const auto = detectPeriod(currentTime, activeSport)
+    setPeriodOverride(period === auto ? null : period)
   }
 
   const handleSeek = useCallback((time: number) => {
     playerRef.current?.seekTo(time)
+    setPeriodOverride(null) // re-auto-detect period after manual seek
   }, [])
 
   async function handleTag(tagKey: string) {
@@ -153,9 +165,8 @@ export default function EventPage() {
 
   useEffect(() => {
     if (event?.sportType) {
-      const s = event.sportType as string
-      setActiveSport(s)
-      setActivePeriod(PERIODS[s]?.[0] ?? '1H')
+      setActiveSport(event.sportType as string)
+      setPeriodOverride(null)
     }
   }, [event?.sportType])
 
@@ -304,7 +315,7 @@ export default function EventPage() {
             comment={comment}
             setComment={setComment}
             onSportChange={handleSportChange}
-            onPeriodChange={setActivePeriod}
+            onPeriodChange={handlePeriodChange}
             onRatingChange={setRating}
             onCoachPickChange={setCoachPick}
             activeColours={activeColours}

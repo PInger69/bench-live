@@ -12,6 +12,7 @@ const SPORTS = [
   { key: 'GENERIC',    label: '📋 Generic'    },
 ]
 
+/** Ordered period labels per sport */
 export const PERIODS: Record<string, string[]> = {
   SOCCER:     ['1H', '2H', 'ET1', 'ET2', 'P'],
   FOOTBALL:   ['Q1', 'Q2', 'Q3', 'Q4', 'OT'],
@@ -19,6 +20,70 @@ export const PERIODS: Record<string, string[]> = {
   RUGBY:      ['1H', '2H', 'ET1', 'ET2', 'SD'],
   BASKETBALL: ['Q1', 'Q2', 'Q3', 'Q4', 'OT'],
   GENERIC:    ['P1', 'P2', 'P3'],
+}
+
+/**
+ * Standard start times (seconds) for each period.
+ * These define where each period begins on a full-length recording.
+ * The last period's end is Infinity (captures any overtime / extra time).
+ *
+ * Soccer  : 2 × 45 min halves = 5400 s; ET 2 × 15 min; P = shootout
+ * Hockey  : 3 × 20 min periods = 3600 s; OT sessions 5 min each
+ * Rugby   : 2 × 40 min halves = 4800 s; ET 2 × 10 min; SD = sudden death
+ * Football: 4 × 15 min quarters = 3600 s
+ * Basketball: 4 × 10 min quarters = 2400 s (FIBA)
+ */
+export const PERIOD_TIMES: Record<string, { label: string; start: number; end: number }[]> = {
+  SOCCER: [
+    { label: '1H',  start: 0,    end: 2700   },  // 0 – 45 min
+    { label: '2H',  start: 2700, end: 5400   },  // 45 – 90 min
+    { label: 'ET1', start: 5400, end: 6300   },  // 90 – 105 min
+    { label: 'ET2', start: 6300, end: 7200   },  // 105 – 120 min
+    { label: 'P',   start: 7200, end: Infinity }, // shootout
+  ],
+  HOCKEY: [
+    { label: 'P1',  start: 0,    end: 1200   },  // 0 – 20 min
+    { label: 'P2',  start: 1200, end: 2400   },  // 20 – 40 min
+    { label: 'P3',  start: 2400, end: 3600   },  // 40 – 60 min
+    { label: 'OT1', start: 3600, end: 3900   },  // 60 – 65 min
+    { label: 'OT2', start: 3900, end: 4200   },  // 65 – 70 min
+    { label: 'P',   start: 4200, end: Infinity },
+  ],
+  RUGBY: [
+    { label: '1H',  start: 0,    end: 2400   },  // 0 – 40 min
+    { label: '2H',  start: 2400, end: 4800   },  // 40 – 80 min
+    { label: 'ET1', start: 4800, end: 5400   },  // 80 – 90 min
+    { label: 'ET2', start: 5400, end: 6000   },  // 90 – 100 min
+    { label: 'SD',  start: 6000, end: Infinity }, // sudden death
+  ],
+  FOOTBALL: [
+    { label: 'Q1', start: 0,    end: 900    },   // 0 – 15 min
+    { label: 'Q2', start: 900,  end: 1800   },   // 15 – 30 min
+    { label: 'Q3', start: 1800, end: 2700   },   // 30 – 45 min
+    { label: 'Q4', start: 2700, end: 3600   },   // 45 – 60 min
+    { label: 'OT', start: 3600, end: Infinity },
+  ],
+  BASKETBALL: [
+    { label: 'Q1', start: 0,    end: 600    },   // 0 – 10 min
+    { label: 'Q2', start: 600,  end: 1200   },   // 10 – 20 min
+    { label: 'Q3', start: 1200, end: 1800   },   // 20 – 30 min
+    { label: 'Q4', start: 1800, end: 2400   },   // 30 – 40 min
+    { label: 'OT', start: 2400, end: Infinity },
+  ],
+  GENERIC: [
+    { label: 'P1', start: 0,              end: Infinity / 3     },
+    { label: 'P2', start: Infinity / 3,   end: (Infinity / 3) * 2 },
+    { label: 'P3', start: (Infinity / 3) * 2, end: Infinity     },
+  ],
+}
+
+/**
+ * Returns the period label that contains the given time (seconds)
+ * for the given sport. Falls back to the first period if nothing matches.
+ */
+export function detectPeriod(timeSeconds: number, sport: string): string {
+  const defs = PERIOD_TIMES[sport] ?? PERIOD_TIMES.SOCCER
+  return (defs.find((p) => timeSeconds >= p.start && timeSeconds < p.end) ?? defs[0]).label
 }
 
 export const TAG_SETS: Record<string, string[]> = {
@@ -42,12 +107,17 @@ interface ControlsBarProps {
   comment: string
   setComment: (v: string) => void
   onSportChange: (sport: string) => void
+  /**
+   * Called when user manually taps a period button.
+   * Under normal playback this is driven automatically by detectPeriod().
+   */
   onPeriodChange: (period: string) => void
   onRatingChange: (rating: number) => void
   onCoachPickChange: (v: boolean) => void
   activeColours: string[]
   onColourFilterChange: (colours: string[]) => void
   activeSport: string
+  /** The currently active period — normally auto-detected, may be user-overridden */
   activePeriod: string
   rating: number
   coachPick: boolean
@@ -61,6 +131,8 @@ export function ControlsBar({
   activeSport, activePeriod, rating, coachPick, lastTagged,
 }: ControlsBarProps) {
   const periods = PERIODS[activeSport] ?? PERIODS.GENERIC
+  // Auto-detected period from the current video time
+  const autoPeriod = detectPeriod(currentTime, activeSport)
 
   function toggleColourFilter(colour: string) {
     if (activeColours.includes(colour)) {
@@ -90,18 +162,29 @@ export function ControlsBar({
           {SPORTS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
         </select>
 
-        {/* Period */}
+        {/* Period — auto-highlighted from video time; tap to force-override */}
         <div className="flex items-center gap-1">
-          {periods.map((p) => (
-            <button
-              key={p}
-              onClick={() => onPeriodChange(p)}
-              className={cn(chipCls, activePeriod === p ? 'bg-brand-600 text-white' : '')}
-              style={activePeriod !== p ? { background: 'var(--c-surf2)', color: 'var(--c-text2)' } : {}}
-            >
-              {p}
-            </button>
-          ))}
+          {periods.map((p) => {
+            const isAuto   = p === autoPeriod   // where the clock says we are
+            const isActive = p === activePeriod  // may be user-overridden
+            return (
+              <button
+                key={p}
+                onClick={() => onPeriodChange(p)}
+                title={isAuto ? `Current period (auto-detected)` : undefined}
+                className={cn(chipCls)}
+                style={
+                  isActive
+                    ? { background: '#2563EB', color: '#fff' }               // selected
+                    : isAuto
+                    ? { background: 'var(--c-surf3)', color: 'var(--c-text1)' } // auto (dimmer)
+                    : { background: 'var(--c-surf2)', color: 'var(--c-text3)' } // inactive
+                }
+              >
+                {p}
+              </button>
+            )
+          })}
         </div>
 
         {/* Colour filter dots */}
