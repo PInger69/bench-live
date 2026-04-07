@@ -29,10 +29,14 @@ export function TagTimeline({
   tags, currentTime, duration, onSeek,
   activeColours = [], getColour, sport,
 }: TagTimelineProps) {
-  const barRef = useRef<HTMLDivElement>(null)
-  const [hoveredTag, setHoveredTag] = useState<Tag | null>(null)
+  const barRef    = useRef<HTMLDivElement>(null)
+  const [hoveredTag,  setHoveredTag]  = useState<Tag | null>(null)
+  const [isDragging,  setIsDragging]  = useState(false)
+  const [dragTime,    setDragTime]    = useState<number | null>(null)
 
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0
+  // While dragging, the playhead shows dragTime immediately (no waiting for video to seek)
+  const displayTime = isDragging && dragTime !== null ? dragTime : currentTime
+  const progress    = duration > 0 ? (displayTime / duration) * 100 : 0
 
   function resolveColour(tag: Tag): string {
     return (getColour ? getColour(tag.name) : undefined) ?? tag.colour
@@ -42,15 +46,40 @@ export function TagTimeline({
     ? tags.filter((t) => activeColours.includes(resolveColour(t)))
     : tags
 
-  function handleBarClick(e: React.MouseEvent | React.TouchEvent) {
-    if (!barRef.current || duration === 0) return
+  // Convert a clientX position into a video time
+  function timeFromClientX(clientX: number): number {
+    if (!barRef.current || duration === 0) return currentTime
     const rect = barRef.current.getBoundingClientRect()
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
-    const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
-    onSeek(pct * duration)
+    const pct  = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+    return pct * duration
   }
 
-  // Calculate period zone bands
+  // ── Pointer-based scrubbing ──────────────────────────────────────────────
+  // setPointerCapture keeps pointer events firing on this element even when
+  // the cursor/finger moves outside the bar — essential for smooth scrubbing.
+
+  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (duration === 0) return
+    e.currentTarget.setPointerCapture(e.pointerId)
+    const t = timeFromClientX(e.clientX)
+    setIsDragging(true)
+    setDragTime(t)
+    onSeek(t)
+  }
+
+  function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!isDragging || duration === 0) return
+    const t = timeFromClientX(e.clientX)
+    setDragTime(t)
+    onSeek(t)
+  }
+
+  function handlePointerUp() {
+    setIsDragging(false)
+    setDragTime(null)
+  }
+
+  // ── Period zone bands ────────────────────────────────────────────────────
   const zoneDefs = sport && duration > 0 ? (PERIOD_TIMES[sport] ?? []) : []
   const zones = zoneDefs
     .map((z, i) => {
@@ -59,7 +88,7 @@ export function TagTimeline({
       const width    = endPct - startPct
       return { label: z.label, left: startPct, width, tint: ZONE_TINTS[i % ZONE_TINTS.length] }
     })
-    .filter((z) => z.width > 0.5) // only show zones with meaningful width
+    .filter((z) => z.width > 0.5)
 
   return (
     <div
@@ -74,24 +103,32 @@ export function TagTimeline({
         className="flex justify-between text-xs font-mono px-3 pt-2 pb-0.5"
         style={{ color: 'var(--c-text3)' }}
       >
-        <span>{formatTime(currentTime)}</span>
+        <span style={isDragging ? { color: 'var(--c-text1)', fontWeight: 600 } : undefined}>
+          {formatTime(displayTime)}
+        </span>
         {activeColours.length > 0 && (
-          <span style={{ color: 'var(--c-text3)' }}>
-            {visibleTags.length} / {tags.length}
-          </span>
+          <span>{visibleTags.length} / {tags.length}</span>
         )}
         <span>{duration > 0 ? formatTime(duration) : '--:--'}</span>
       </div>
 
-      {/* Track zone */}
+      {/* ── Track zone ── */}
       <div
         ref={barRef}
-        className="relative mx-3 mb-2 cursor-pointer"
-        style={{ height: 48 }}
-        onClick={handleBarClick}
-        onTouchStart={handleBarClick}
+        className="relative mx-3 mb-2"
+        style={{
+          height: 48,
+          cursor: isDragging ? 'grabbing' : 'grab',
+          // Prevent text selection while scrubbing
+          userSelect: 'none',
+          touchAction: 'none',
+        }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
       >
-        {/* ── Period zone bands ── */}
+        {/* Period zone bands */}
         {zones.map((zone) => (
           <div
             key={zone.label}
@@ -103,7 +140,6 @@ export function TagTimeline({
               borderLeft: '1px solid rgba(255,255,255,0.04)',
             }}
           >
-            {/* Period label at bottom of zone */}
             <span
               className="absolute bottom-1 left-1 text-[9px] font-bold tracking-widest uppercase pointer-events-none select-none"
               style={{ color: 'var(--c-text3)', opacity: 0.8 }}
@@ -113,7 +149,7 @@ export function TagTimeline({
           </div>
         ))}
 
-        {/* ── Track hairline (centre) ── */}
+        {/* Track hairline */}
         <div
           className="absolute w-full pointer-events-none"
           style={{
@@ -124,41 +160,49 @@ export function TagTimeline({
           }}
         />
 
-        {/* ── Tick marks — full-height glowing lines ── */}
+        {/* Tick marks */}
         {duration > 0 && visibleTags.map((tag) => {
-          const pct    = (tag.time / duration) * 100
-          const colour = resolveColour(tag)
-          const isHovered = hoveredTag?.id === tag.id
+          const pct       = (tag.time / duration) * 100
+          const colour    = resolveColour(tag)
+          const isHovered = !isDragging && hoveredTag?.id === tag.id
           return (
-            <button
+            <div
               key={tag.id}
               className="absolute inset-y-0 -translate-x-px"
-              style={{ left: `${pct}%`, width: 10, background: 'transparent', padding: 0 }}
-              onClick={(e) => { e.stopPropagation(); onSeek(tag.time) }}
-              onMouseEnter={() => setHoveredTag(tag)}
+              style={{ left: `${pct}%`, width: 10, zIndex: 2 }}
+              // Tap a tick = seek exactly to that tag (stopPropagation prevents
+              // the bar's pointerdown from firing a second seek)
+              onPointerDown={(e) => { e.stopPropagation(); onSeek(tag.time) }}
+              onMouseEnter={() => !isDragging && setHoveredTag(tag)}
               onMouseLeave={() => setHoveredTag(null)}
             >
               <div
                 className="absolute inset-y-0 left-1/2 -translate-x-1/2 transition-all duration-100"
                 style={{
-                  width:     isHovered ? 3 : 2,
+                  width:      isHovered ? 3 : 2,
                   background: colour,
                   boxShadow:  isHovered
                     ? `0 0 8px 2px ${colour}90, 0 0 2px ${colour}`
                     : `0 0 4px 1px ${colour}60`,
                   borderRadius: 1,
                   opacity: isHovered ? 1 : 0.85,
+                  cursor: 'pointer',
                 }}
               />
-            </button>
+            </div>
           )
         })}
 
-        {/* ── Playhead ── */}
+        {/* Playhead */}
         {duration > 0 && (
           <div
-            className="absolute inset-y-0 -translate-x-px pointer-events-none z-10"
-            style={{ left: `${progress}%` }}
+            className="absolute inset-y-0 pointer-events-none z-10"
+            style={{
+              left: `${progress}%`,
+              transform: 'translateX(-1px)',
+              // No CSS transition while dragging — instant visual feedback
+              transition: isDragging ? 'none' : undefined,
+            }}
           >
             {/* Vertical rule */}
             <div
@@ -166,25 +210,31 @@ export function TagTimeline({
               style={{
                 width: 2,
                 background: 'var(--c-text1)',
-                boxShadow: '0 0 6px rgba(255,255,255,0.25)',
+                boxShadow: isDragging
+                  ? '0 0 10px rgba(255,255,255,0.5), 0 0 3px rgba(255,255,255,0.8)'
+                  : '0 0 6px rgba(255,255,255,0.25)',
               }}
             />
             {/* Diamond head */}
             <div
               className="absolute left-1/2 top-1"
               style={{
-                width: 8, height: 8,
+                width:  isDragging ? 10 : 8,
+                height: isDragging ? 10 : 8,
                 background: 'var(--c-text1)',
                 borderRadius: 2,
                 transform: 'translateX(-50%) rotate(45deg)',
-                boxShadow: '0 0 4px rgba(255,255,255,0.3)',
+                boxShadow: isDragging
+                  ? '0 0 8px rgba(255,255,255,0.6)'
+                  : '0 0 4px rgba(255,255,255,0.3)',
+                transition: 'width 100ms, height 100ms, box-shadow 100ms',
               }}
             />
           </div>
         )}
 
-        {/* ── Tooltip ── */}
-        {hoveredTag && duration > 0 && (
+        {/* Tooltip — hidden while dragging */}
+        {hoveredTag && !isDragging && duration > 0 && (
           <div
             className="absolute z-20 pointer-events-none"
             style={{
@@ -208,14 +258,10 @@ export function TagTimeline({
               <div className="flex items-center gap-2 mt-0.5" style={{ color: 'var(--c-text3)' }}>
                 <span className="font-mono">{formatTime(hoveredTag.time)}</span>
                 {hoveredTag.period && (
-                  <>
-                    <span>·</span>
-                    <span>{hoveredTag.period}</span>
-                  </>
+                  <><span>·</span><span>{hoveredTag.period}</span></>
                 )}
               </div>
             </div>
-            {/* Arrow */}
             <div
               className="absolute left-1/2 -translate-x-1/2 -bottom-1.5"
               style={{
