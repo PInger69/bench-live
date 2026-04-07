@@ -60,7 +60,6 @@ export default function EventPage() {
   const [periodOverride, setPeriodOverride] = useState<string | null>(null)
   const [rating, setRating] = useState(0)
   const [coachPick, setCoachPick] = useState(false)
-  const [comment, setComment] = useState('')
   const [tagging, setTagging] = useState<string | null>(null)
   const [lastTagged, setLastTagged] = useState<string | null>(null)
 
@@ -100,14 +99,12 @@ export default function EventPage() {
           duration: 30,
           colour: getColour(tagKey),
           period: activePeriod,
-          comment: comment || undefined,
           rating: rating || undefined,
           coachPick,
         }),
       })
       addTag(tag)
       setLastTagged(displayName)
-      setComment('')
       setTimeout(() => setLastTagged(null), 1800)
     } catch (err) {
       console.error('Failed to create tag:', err)
@@ -310,11 +307,7 @@ export default function EventPage() {
 
           {/* Controls bar */}
           <ControlsBar
-            defaultSport={activeSport}
             currentTime={currentTime}
-            comment={comment}
-            setComment={setComment}
-            onSportChange={handleSportChange}
             onPeriodChange={handlePeriodChange}
             onRatingChange={setRating}
             onCoachPickChange={setCoachPick}
@@ -346,6 +339,7 @@ export default function EventPage() {
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         activeSport={activeSport}
+        onSportChange={handleSportChange}
         colourMap={colourMap}
         nameMap={nameMap}
         onSetColour={setColour}

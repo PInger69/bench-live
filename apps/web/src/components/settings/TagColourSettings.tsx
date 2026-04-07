@@ -31,6 +31,7 @@ interface TagColourSettingsProps {
   open: boolean
   onClose: () => void
   activeSport: string
+  onSportChange: (sport: string) => void
   colourMap: TagColourMap
   nameMap: TagNameMap
   onSetColour: (tagKey: string, colour: string) => void
@@ -39,7 +40,7 @@ interface TagColourSettingsProps {
 }
 
 export function TagColourSettings({
-  open, onClose, activeSport,
+  open, onClose, activeSport, onSportChange,
   colourMap, nameMap,
   onSetColour, onSetName, onResetAll,
 }: TagColourSettingsProps) {
@@ -48,9 +49,18 @@ export function TagColourSettings({
 
   useEffect(() => { if (!open) setOpenPickerFor(null) }, [open])
 
+  // Keep the tag list in sync when the active sport changes externally
+  useEffect(() => { setViewSport(activeSport) }, [activeSport])
+
   if (!open) return null
 
   const tagKeys = TAG_SETS[viewSport] ?? TAG_SETS.GENERIC
+
+  function handleSportClick(key: string) {
+    setViewSport(key)
+    onSportChange(key)
+    setOpenPickerFor(null)
+  }
 
   return (
     <>
@@ -69,34 +79,39 @@ export function TagColourSettings({
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-theme">
           <div>
-            <h2 className="text-base font-bold text-theme1">Tag Names</h2>
-            <p className="text-xs text-theme2 mt-0.5">Rename tags and assign colours</p>
+            <h2 className="text-base font-bold" style={{ color: 'var(--c-text1)' }}>Tag Names</h2>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--c-text2)' }}>Rename tags and assign colours</p>
           </div>
           <button
             onClick={onClose}
-            className="h-8 w-8 rounded-full flex items-center justify-center transition-colors text-theme2 hover:text-theme1"
-            style={{ background: 'var(--c-surf2)' }}
+            className="h-8 w-8 rounded-full flex items-center justify-center transition-colors"
+            style={{ background: 'var(--c-surf2)', color: 'var(--c-text2)' }}
           >
             ✕
           </button>
         </div>
 
-        {/* Sport tabs */}
-        <div className="flex overflow-x-auto gap-1 px-3 py-2.5 border-b border-theme scrollbar-none">
-          {SPORTS.map((s) => (
-            <button
-              key={s.key}
-              onClick={() => { setViewSport(s.key); setOpenPickerFor(null) }}
-              className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium touch-manipulation transition-colors"
-              style={
-                viewSport === s.key
-                  ? { background: '#2563EB', color: '#fff' }
-                  : { background: 'var(--c-surf2)', color: 'var(--c-text2)' }
-              }
-            >
-              {s.label}
-            </button>
-          ))}
+        {/* Sport / Template selector */}
+        <div className="px-4 pt-3 pb-2 border-b border-theme">
+          <p className="text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: 'var(--c-text3)' }}>
+            Sport Template
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {SPORTS.map((s) => (
+              <button
+                key={s.key}
+                onClick={() => handleSportClick(s.key)}
+                className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium touch-manipulation transition-colors"
+                style={
+                  viewSport === s.key
+                    ? { background: '#2563EB', color: '#fff' }
+                    : { background: 'var(--c-surf2)', color: 'var(--c-text2)' }
+                }
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Tag list */}

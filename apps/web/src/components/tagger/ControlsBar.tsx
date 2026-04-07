@@ -102,22 +102,13 @@ export const FILTER_PALETTE = [
 ]
 
 interface ControlsBarProps {
-  defaultSport: string
   currentTime: number
-  comment: string
-  setComment: (v: string) => void
-  onSportChange: (sport: string) => void
-  /**
-   * Called when user manually taps a period button.
-   * Under normal playback this is driven automatically by detectPeriod().
-   */
   onPeriodChange: (period: string) => void
   onRatingChange: (rating: number) => void
   onCoachPickChange: (v: boolean) => void
   activeColours: string[]
   onColourFilterChange: (colours: string[]) => void
   activeSport: string
-  /** The currently active period — normally auto-detected, may be user-overridden */
   activePeriod: string
   rating: number
   coachPick: boolean
@@ -125,8 +116,8 @@ interface ControlsBarProps {
 }
 
 export function ControlsBar({
-  currentTime, comment, setComment,
-  onSportChange, onPeriodChange, onRatingChange, onCoachPickChange,
+  currentTime,
+  onPeriodChange, onRatingChange, onCoachPickChange,
   activeColours, onColourFilterChange,
   activeSport, activePeriod, rating, coachPick, lastTagged,
 }: ControlsBarProps) {
@@ -149,18 +140,8 @@ export function ControlsBar({
       className="flex-shrink-0 border-t border-theme"
       style={{ background: 'var(--c-surface)' }}
     >
-      {/* Row 1 — centred, wraps naturally on small screens */}
-      <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 px-3 py-2 border-b border-theme">
-
-        {/* Sport */}
-        <select
-          value={activeSport}
-          onChange={(e) => onSportChange(e.target.value)}
-          className="rounded-lg text-xs px-2 py-1.5 touch-manipulation focus:outline-none focus:ring-1 focus:ring-brand-500 border border-theme"
-          style={{ background: 'var(--c-surf2)', color: 'var(--c-text1)' }}
-        >
-          {SPORTS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
-        </select>
+      {/* Single row — centred */}
+      <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 px-3 py-2">
 
         {/* Period — auto-highlighted from video time; tap to force-override */}
         <div className="flex items-center gap-1">
@@ -249,25 +230,10 @@ export function ControlsBar({
         {/* Time + last tagged */}
         <div className="flex items-center gap-2">
           {lastTagged && (
-            <span className="text-xs text-green-600 dark:text-green-400 font-medium">✓ {lastTagged}</span>
+            <span className="text-xs font-medium" style={{ color: '#16a34a' }}>✓ {lastTagged}</span>
           )}
-          <span className="text-xs font-mono text-theme3">{formatTime(currentTime)}</span>
+          <span className="text-xs font-mono" style={{ color: 'var(--c-text3)' }}>{formatTime(currentTime)}</span>
         </div>
-      </div>
-
-      {/* Row 2: Comment */}
-      <div className="px-3 py-2">
-        <input
-          type="text"
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          placeholder="Add a comment to the next tag (optional)..."
-          className="w-full rounded-xl px-3 py-2 text-sm border border-theme focus:border-brand-500 focus:outline-none touch-manipulation"
-          style={{
-            background: 'var(--c-surf2)',
-            color: 'var(--c-text1)',
-          }}
-        />
       </div>
     </div>
   )
