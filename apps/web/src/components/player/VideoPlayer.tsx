@@ -27,12 +27,10 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const iconTimer = useRef<ReturnType<typeof setTimeout>>()
 
     // ── Scrub state (all refs — no re-renders needed) ─────────────────────
-    // pendingTime: the latest time the user dragged to (null = no pending seek)
-    // isSeeking:   true while the browser is processing a seek
-    // resumeAfter: whether to call play() when scrub ends
     const pendingTimeRef  = useRef<number | null>(null)
     const isSeekingRef    = useRef(false)
     const resumeAfterRef  = useRef(false)
+    const wasMutedRef     = useRef(false)  // restore mute state after scrub
 
     // Kick off the next pending seek (no-op if nothing pending or already seeking)
     const flushPendingScrub = useCallback(() => {
@@ -59,22 +57,27 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       beginScrub: () => {
         const v = videoRef.current
         if (!v) return
-        resumeAfterRef.current = !v.paused   // remember whether it was playing
-        if (!v.paused) v.pause()             // pause so decoder only decodes frames
+        resumeAfterRef.current = !v.paused
+        wasMutedRef.current    = v.muted
+        // Mute immediately so buffered audio doesn't play out of sync while seeking
+        v.muted = true
+        if (!v.paused) v.pause()
       },
 
       // Called on every pointer-move: queue the seek, let the 'seeked' event chain them
       scrub: (time: number) => {
         const v = videoRef.current
         if (!v) return
-        pendingTimeRef.current = time        // always keep the latest target
-        flushPendingScrub()                  // start a seek only if one isn't already running
+        pendingTimeRef.current = time
+        flushPendingScrub()
       },
 
       // Called when the user releases the scrubber
       endScrub: () => {
         const v = videoRef.current
         if (!v) return
+        // Restore mute first so audio comes back at the correct new position
+        v.muted = wasMutedRef.current
         if (resumeAfterRef.current) v.play().catch(() => {})
         resumeAfterRef.current = false
       },
@@ -238,27 +241,33 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           </div>
         )}
 
-        {/* Minimal controls — bottom-right corner */}
+        {/* ── Bottom-right controls ── */}
         <div
-          className="absolute bottom-2 right-3 flex items-center gap-2 opacity-0 hover:opacity-100 transition-opacity"
-          style={{ pointerEvents: 'all' }}
-          onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = '0')}
+          className="absolute bottom-3 right-3 flex items-center gap-2"
           onClick={(e) => e.stopPropagation()}
         >
+          {/* Mute — always visible */}
           <button
             onClick={toggleMute}
-            className="rounded-full flex items-center justify-center transition-colors"
-            style={{ width: 32, height: 32, background: 'rgba(0,0,0,0.55)', color: '#fff' }}
+            className="rounded-full flex items-center justify-center transition-all"
             title={muted ? 'Unmute' : 'Mute'}
+            style={{
+              width: 36, height: 36,
+              background: muted ? 'rgba(239,68,68,0.75)' : 'rgba(0,0,0,0.60)',
+              color: '#fff',
+              backdropFilter: 'blur(4px)',
+              boxShadow: muted ? '0 0 10px rgba(239,68,68,0.5)' : '0 2px 8px rgba(0,0,0,0.4)',
+              border: muted ? '1px solid rgba(239,68,68,0.6)' : '1px solid rgba(255,255,255,0.12)',
+            }}
           >
             {muted ? (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-                <line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
+                <line x1="23" y1="9" x2="17" y2="15"/>
+                <line x1="17" y1="9" x2="23" y2="15"/>
               </svg>
             ) : (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
                 <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
                 <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
@@ -266,15 +275,24 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
             )}
           </button>
 
+          {/* Fullscreen — hover-reveal */}
           <button
             onClick={() => videoRef.current?.requestFullscreen?.()}
-            className="rounded-full flex items-center justify-center"
-            style={{ width: 32, height: 32, background: 'rgba(0,0,0,0.55)', color: '#fff' }}
+            className="rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
             title="Fullscreen"
+            style={{
+              width: 36, height: 36,
+              background: 'rgba(0,0,0,0.60)',
+              color: '#fff',
+              backdropFilter: 'blur(4px)',
+              border: '1px solid rgba(255,255,255,0.12)',
+            }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
-              <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <polyline points="15 3 21 3 21 9"/>
+              <polyline points="9 21 3 21 3 15"/>
+              <line x1="21" y1="3" x2="14" y2="10"/>
+              <line x1="3" y1="21" x2="10" y2="14"/>
             </svg>
           </button>
         </div>
