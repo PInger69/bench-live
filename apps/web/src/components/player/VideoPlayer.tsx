@@ -30,7 +30,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const pendingTimeRef  = useRef<number | null>(null)
     const isSeekingRef    = useRef(false)
     const resumeAfterRef  = useRef(false)
-    const wasMutedRef     = useRef(false)  // restore mute state after scrub
+    const scrubVolumeRef  = useRef(1)   // saves volume before scrub silencing
 
     // Kick off the next pending seek (no-op if nothing pending or already seeking)
     const flushPendingScrub = useCallback(() => {
@@ -58,12 +58,12 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         const v = videoRef.current
         if (!v) return
         resumeAfterRef.current = !v.paused
-        wasMutedRef.current    = v.muted
-        v.muted = true          // silence immediately — no audio during scrub
+        // Use volume=0 to silence during scrub — NOT v.muted.
+        // Touching v.muted desyncs the React muted state and breaks the
+        // mute button (the next click reads the wrong starting value).
+        scrubVolumeRef.current = v.volume
+        v.volume = 0
         if (!v.paused) v.pause()
-        // Stop HLS from buffering new segments while the user is dragging.
-        // Without this, each seek triggers a new audio segment load and you
-        // end up with multiple audio streams playing simultaneously.
         const hls = hlsRef.current as { stopLoad?: () => void } | null
         hls?.stopLoad?.()
       },
@@ -80,11 +80,9 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       endScrub: () => {
         const v = videoRef.current
         if (!v) return
-        // Tell HLS to start loading fresh from exactly the position we landed on.
-        // This prevents any stale audio segments from the scrub path playing back.
         const hls = hlsRef.current as { startLoad?: (pos: number) => void } | null
         hls?.startLoad?.(v.currentTime)
-        v.muted = wasMutedRef.current   // restore user's mute preference
+        v.volume = scrubVolumeRef.current   // restore volume (muted is untouched)
         if (resumeAfterRef.current) v.play().catch(() => {})
         resumeAfterRef.current = false
       },
@@ -151,10 +149,9 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       // When a seek completes, immediately process the next pending scrub position.
       // This chains seeks: decoder finishes → we seek to the latest pointer position
       // → decoder finishes → repeat. Always converges on where the user actually is.
-      const onSeeked = () => {
-        isSeekingRef.current = false
-        flushPendingScrub()
-      }
+      const onSeeked       = () => { isSeekingRef.current = false; flushPendingScrub() }
+      // Keep React muted state in sync with the element — fires on any muted/volume change
+      const onVolumeChange = () => setMuted(video.muted)
 
       video.addEventListener('timeupdate',     onTime)
       video.addEventListener('durationchange', onDuration)
@@ -162,6 +159,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       video.addEventListener('play',           onPlay)
       video.addEventListener('pause',          onPause)
       video.addEventListener('seeked',         onSeeked)
+      video.addEventListener('volumechange',   onVolumeChange)
 
       return () => {
         video.removeEventListener('timeupdate',     onTime)
@@ -170,6 +168,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         video.removeEventListener('play',           onPlay)
         video.removeEventListener('pause',          onPause)
         video.removeEventListener('seeked',         onSeeked)
+        video.removeEventListener('volumechange',   onVolumeChange)
       }
     }, [onTimeUpdate, onDurationChange, flushPendingScrub])
 
@@ -211,7 +210,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       const v = videoRef.current
       if (!v) return
       v.muted = !v.muted
-      setMuted(v.muted)
+      // volumechange listener will sync React muted state automatically
     }
 
     return (
