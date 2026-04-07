@@ -65,10 +65,10 @@ export default function LoginPage() {
 
           <div>
             <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--c-text1)' }}>
-              Email
+              Email or username
             </label>
             <input
-              type="email"
+              type="text"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -111,7 +111,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-xs mt-6" style={{ color: 'var(--c-text3)' }}>
-          Demo: coach@benchlive.com / coach123
+          Quick login: <strong style={{ color: 'var(--c-text2)' }}>admin</strong> / <strong style={{ color: 'var(--c-text2)' }}>admin</strong>
         </p>
       </div>
     </main>

@@ -42,10 +42,10 @@ async function main() {
   })
 
   // Create users
-  const adminPassword = await bcrypt.hash('admin123', 10)
+  const adminPassword = await bcrypt.hash('admin', 10)
   const admin = await prisma.user.upsert({
     where: { email: 'admin@benchlive.com' },
-    update: {},
+    update: { passwordHash: adminPassword },
     create: {
       email: 'admin@benchlive.com',
       passwordHash: adminPassword,
@@ -119,7 +119,7 @@ async function main() {
   console.log('Seed complete.')
   console.log('')
   console.log('Demo accounts:')
-  console.log('  admin@benchlive.com  / admin123  (Superuser)')
+  console.log('  admin  / admin   (Superuser)   — or admin@benchlive.com')
   console.log('  coach@benchlive.com  / coach123  (Coach)')
   console.log('  player@benchlive.com / player123 (Player)')
 }

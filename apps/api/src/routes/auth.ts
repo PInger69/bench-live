@@ -3,8 +3,10 @@ import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 
 const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
+  // Accept either a full email address OR a plain username (e.g. "admin").
+  // If no @ is present we append @benchlive.com before looking up the user.
+  email: z.string().min(1),
+  password: z.string().min(1),
 })
 
 export const authRoutes: FastifyPluginAsync = async (app) => {
@@ -15,7 +17,12 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
       return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: result.error.message } })
     }
 
-    const { email, password } = result.data
+    let { email, password } = result.data
+
+    // Allow plain username login: "admin" → "admin@benchlive.com"
+    if (!email.includes('@')) {
+      email = `${email}@benchlive.com`
+    }
 
     const user = await app.prisma.user.findUnique({
       where: { email },
