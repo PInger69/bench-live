@@ -107,7 +107,7 @@ async function main() {
   // Replace with your own video URL (HLS or MP4) as needed
   await prisma.feed.upsert({
     where: { id: 'feed-main' },
-    update: { mp4Url: '/test-40min.mp4' },
+    update: { mp4Url: '/test-40min.mp4', hlsUrl: null },
     create: {
       id: 'feed-main',
       eventId: event.id,
