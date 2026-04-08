@@ -7,6 +7,7 @@ import { useEventDetailStore } from '@/store/eventDetail'
 import { VideoPlayer, type VideoPlayerHandle } from '@/components/player/VideoPlayer'
 import { TagTimeline } from '@/components/player/TagTimeline'
 import { Telestration } from '@/components/player/Telestration'
+import { ClipView } from '@/components/player/ClipView'
 import { ClipExport } from '@/components/player/ClipExport'
 import { TagButtons } from '@/components/tagger/TagButtons'
 import { VoiceDictation } from '@/components/tagger/VoiceDictation'
@@ -30,6 +31,7 @@ export default function EventPage() {
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [clipViewOpen, setClipViewOpen] = useState(false)
 
   // Per-tag colour map + custom names
   const { getColour, setColour, colourMap, getName, setName, nameMap, resetAll } = useTagColours()
@@ -298,6 +300,25 @@ export default function EventPage() {
           {/* ☀/🌙 Theme toggle */}
           <ThemeToggle />
 
+          {/* Clip View toggle */}
+          <button
+            onClick={() => setClipViewOpen(!clipViewOpen)}
+            className="h-8 w-8 rounded-full flex items-center justify-center transition-colors touch-manipulation glass-interactive"
+            style={{
+              background: clipViewOpen ? 'var(--c-tint)' : 'var(--c-surf2)',
+              color: clipViewOpen ? '#fff' : 'var(--c-text2)',
+              border: '0.5px solid var(--glass-border)',
+            }}
+            title="Clip View"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/>
+              <line x1="7" y1="2" x2="7" y2="22"/>
+              <line x1="17" y1="2" x2="17" y2="22"/>
+              <line x1="2" y1="12" x2="22" y2="12"/>
+            </svg>
+          </button>
+
           {/* Clip export */}
           <ClipExport videoRef={videoElRef} currentTime={currentTime} duration={duration} />
 
@@ -426,6 +447,17 @@ export default function EventPage() {
           onTag={handleTag}
         />
       </div>
+
+      {/* ── Clip View drawer ── */}
+      <ClipView
+        open={clipViewOpen}
+        onClose={() => setClipViewOpen(false)}
+        tags={tags}
+        currentTime={currentTime}
+        duration={duration}
+        onSeek={handleSeek}
+        getColourByName={getColourByName}
+      />
 
       {/* ── Tag Names & Colours settings drawer ── */}
       <TagColourSettings
