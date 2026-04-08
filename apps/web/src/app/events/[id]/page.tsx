@@ -6,10 +6,14 @@ import { useAuthStore } from '@/store/auth'
 import { useEventDetailStore } from '@/store/eventDetail'
 import { VideoPlayer, type VideoPlayerHandle } from '@/components/player/VideoPlayer'
 import { TagTimeline } from '@/components/player/TagTimeline'
+import { Telestration } from '@/components/player/Telestration'
+import { ClipExport } from '@/components/player/ClipExport'
 import { TagButtons } from '@/components/tagger/TagButtons'
+import { VoiceDictation } from '@/components/tagger/VoiceDictation'
 import { ControlsBar, PERIODS, TAG_SETS, detectPeriod } from '@/components/tagger/ControlsBar'
 import { TagColourSettings } from '@/components/settings/TagColourSettings'
 import { useTagColours } from '@/hooks/useTagColours'
+import { useTagShortcuts } from '@/hooks/useTagShortcuts'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { apiFetch } from '@/lib/utils'
 import type { Tag } from '@bench-live/shared'
@@ -22,6 +26,7 @@ export default function EventPage() {
   const { event, tags, loading, fetchEvent, fetchTags, addTag, clearAllTags } = useEventDetailStore()
 
   const playerRef = useRef<VideoPlayerHandle>(null)
+  const videoElRef = useRef<HTMLVideoElement | null>(null)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -62,6 +67,8 @@ export default function EventPage() {
   const [coachPick, setCoachPick] = useState(false)
   const [tagging, setTagging] = useState<string | null>(null)
   const [lastTagged, setLastTagged] = useState<string | null>(null)
+  const [telestrationActive, setTelestrationActive] = useState(false)
+  const [videoPaused, setVideoPaused] = useState(true)
 
   // The active period: user override if set, otherwise auto-detected from video time
   const activePeriod = periodOverride ?? detectPeriod(currentTime, activeSport)
@@ -98,6 +105,33 @@ export default function EventPage() {
     playerRef.current?.endScrub()
   }, [])
 
+  // Voice dictation creates a tag comment with the spoken text
+  const handleVoiceTranscript = useCallback((text: string) => {
+    // Create a NOTE-type tag with the dictated text as the name
+    if (!user || tagging || !token) return
+    void (async () => {
+      try {
+        const tag = await apiFetch<Tag>('/api/tags', token, {
+          method: 'POST',
+          body: JSON.stringify({
+            eventId: id,
+            type: TagType.NORMAL,
+            name: text,
+            time: currentTime,
+            duration: 30,
+            colour: '#6B7280',
+            period: activePeriod,
+          }),
+        })
+        addTag(tag)
+        setLastTagged(text.length > 20 ? text.slice(0, 20) + '...' : text)
+        setTimeout(() => setLastTagged(null), 2500)
+      } catch (err) {
+        console.error('Voice tag failed:', err)
+      }
+    })()
+  }, [user, tagging, token, id, currentTime, activePeriod, addTag])
+
   async function handleTag(tagKey: string) {
     if (!user || tagging || !token) return
     setTagging(tagKey)
@@ -128,10 +162,15 @@ export default function EventPage() {
     }
   }
 
+  // Keyboard shortcuts for rapid tagging (G=Goal, S=Shot, etc.)
+  useTagShortcuts(activeSport, handleTag, !tagging && !telestrationActive && !settingsOpen)
+
   useEffect(() => {
     if (!token) { router.push('/login'); return }
     fetchEvent(id, token)
     fetchTags(id, token)
+    // Remember last event for Quick Actions "Resume Last Event"
+    try { localStorage.setItem('bench-live:last-event', id) } catch {}
   }, [id, token, fetchEvent, fetchTags, router])
 
   // ── Keyboard navigation ────────────────────────────────────────────────────
@@ -259,11 +298,37 @@ export default function EventPage() {
           {/* ☀/🌙 Theme toggle */}
           <ThemeToggle />
 
+          {/* Clip export */}
+          <ClipExport videoRef={videoElRef} currentTime={currentTime} duration={duration} />
+
+          {/* Voice dictation */}
+          <VoiceDictation onTranscript={handleVoiceTranscript} />
+
+          {/* Telestration toggle (only when paused) */}
+          {videoPaused && (
+            <button
+              onClick={() => setTelestrationActive(!telestrationActive)}
+              className="h-8 w-8 rounded-full flex items-center justify-center transition-colors touch-manipulation glass-interactive"
+              style={{
+                background: telestrationActive ? 'var(--c-tint)' : 'var(--c-surf2)',
+                color: telestrationActive ? '#fff' : 'var(--c-text2)',
+                border: '0.5px solid var(--glass-border)',
+              }}
+              title="Draw on video"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+                <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+                <path d="M2 2l7.586 7.586"/>
+              </svg>
+            </button>
+          )}
+
           {/* ⚙ Settings gear */}
           <button
             onClick={() => setSettingsOpen(true)}
-            className="h-8 w-8 rounded-full flex items-center justify-center transition-colors touch-manipulation"
-            style={{ background: 'var(--c-surf2)', color: 'var(--c-text2)' }}
+            className="h-8 w-8 rounded-full flex items-center justify-center transition-colors touch-manipulation glass-interactive"
+            style={{ background: 'var(--c-surf2)', color: 'var(--c-text2)', border: '0.5px solid var(--glass-border)' }}
             title="Tag Names & Colours"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -300,12 +365,21 @@ export default function EventPage() {
         {/* Centre column */}
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
           {/* Video */}
-          <div className="flex-1 min-h-0 bg-black flex items-center justify-center">
+          <div className="relative flex-1 min-h-0 bg-black flex items-center justify-center">
             <VideoPlayer
               ref={playerRef}
               feed={primaryFeed}
               onTimeUpdate={setCurrentTime}
               onDurationChange={setDuration}
+              onPlayStateChange={(p) => {
+                setVideoPaused(!p)
+                if (p) setTelestrationActive(false)
+                if (!videoElRef.current) videoElRef.current = playerRef.current?.getVideoElement() ?? null
+              }}
+            />
+            <Telestration
+              active={telestrationActive}
+              onClose={() => setTelestrationActive(false)}
             />
           </div>
 

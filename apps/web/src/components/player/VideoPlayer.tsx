@@ -9,16 +9,18 @@ export interface VideoPlayerHandle {
   scrub:      (time: number) => void  // call on every pointer move: smart queued seek
   endScrub:   () => void              // call on scrub end: resume if was playing
   togglePlay: () => void
+  getVideoElement: () => HTMLVideoElement | null
 }
 
 interface VideoPlayerProps {
   feed: Feed | null
   onTimeUpdate?: (time: number) => void
   onDurationChange?: (duration: number) => void
+  onPlayStateChange?: (playing: boolean) => void
 }
 
 export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
-  function VideoPlayer({ feed, onTimeUpdate, onDurationChange }, ref) {
+  function VideoPlayer({ feed, onTimeUpdate, onDurationChange, onPlayStateChange }, ref) {
     const videoRef = useRef<HTMLVideoElement>(null)
     const hlsRef   = useRef<unknown>(null)
     const [playing,  setPlaying]  = useState(false)
@@ -94,6 +96,8 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         if (!v) return
         if (v.paused) v.play().catch(() => {}); else v.pause()
       },
+
+      getVideoElement: () => videoRef.current,
     }), [flushPendingScrub])
 
     // ── Flash icon helper ──────────────────────────────────────────────────
@@ -145,8 +149,8 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
       const onTime     = () => onTimeUpdate?.(video.currentTime)
       const onDuration = () => onDurationChange?.(video.duration)
-      const onPlay     = () => setPlaying(true)
-      const onPause    = () => setPlaying(false)
+      const onPlay     = () => { setPlaying(true);  onPlayStateChange?.(true) }
+      const onPause    = () => { setPlaying(false); onPlayStateChange?.(false) }
 
       // When a seek completes, immediately process the next pending scrub position.
       // This chains seeks: decoder finishes → we seek to the latest pointer position
@@ -172,7 +176,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         video.removeEventListener('seeked',         onSeeked)
         video.removeEventListener('volumechange',   onVolumeChange)
       }
-    }, [onTimeUpdate, onDurationChange, flushPendingScrub])
+    }, [onTimeUpdate, onDurationChange, onPlayStateChange, flushPendingScrub])
 
     // ── Space bar = play/pause ────────────────────────────────────────────
     useEffect(() => {
@@ -291,6 +295,32 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
               </svg>
             )}
           </button>
+
+          {/* AirPlay — Safari only (hover-reveal) */}
+          {typeof window !== 'undefined' && 'WebKitPlaybackTargetAvailabilityEvent' in window && (
+            <button
+              onClick={() => {
+                const v = videoRef.current as HTMLVideoElement & { webkitShowPlaybackTargetPicker?: () => void }
+                v?.webkitShowPlaybackTargetPicker?.()
+              }}
+              className="rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity glass-interactive"
+              title="AirPlay"
+              style={{
+                width: 36, height: 36,
+                background: 'rgba(30,30,35,0.50)',
+                color: '#fff',
+                backdropFilter: 'saturate(200%) blur(40px)',
+                WebkitBackdropFilter: 'saturate(200%) blur(40px)',
+                boxShadow: 'inset 0 0.5px 0 rgba(255,255,255,0.15), 0 8px 32px rgba(0,0,0,0.25)',
+                border: '0.5px solid rgba(255,255,255,0.15)',
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/>
+                <polygon points="12 15 17 21 7 21 12 15"/>
+              </svg>
+            </button>
+          )}
 
           {/* Fullscreen — hover-reveal */}
           <button

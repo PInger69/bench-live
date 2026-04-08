@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuthStore } from '@/store/auth'
 import { useEventsStore } from '@/store/events'
@@ -10,6 +10,7 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 
 export default function EventsPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user, token } = useAuthStore()
   const { events, loading, fetchEvents } = useEventsStore()
 
@@ -17,6 +18,15 @@ export default function EventsPage() {
     if (!token) { router.push('/login'); return }
     fetchEvents(token)
   }, [token, fetchEvents, router])
+
+  // Quick Actions: "Resume Last Event" from PWA long-press shortcut
+  useEffect(() => {
+    if (searchParams.get('resume') === 'last' && events.length > 0) {
+      // Save last visited event to localStorage for future resume
+      const lastId = localStorage.getItem('bench-live:last-event') ?? events[0].id
+      router.replace(`/events/${lastId}`)
+    }
+  }, [searchParams, events, router])
 
   if (!user) return null
 

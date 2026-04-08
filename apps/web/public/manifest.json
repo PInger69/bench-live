@@ -1,0 +1,40 @@
+{
+  "name": "Bench Live",
+  "short_name": "Bench Live",
+  "description": "Professional Sports Video Analysis Platform",
+  "start_url": "/events",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#000000",
+  "theme_color": "#007AFF",
+  "categories": ["sports", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Resume Last Event",
+      "short_name": "Resume",
+      "description": "Continue tagging your most recent event",
+      "url": "/events?resume=last",
+      "icons": [{ "src": "/icons/resume-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Start New Event",
+      "short_name": "New Event",
+      "description": "Create a new event to tag",
+      "url": "/events/new",
+      "icons": [{ "src": "/icons/new-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "All Events",
+      "short_name": "Events",
+      "description": "View all your events",
+      "url": "/events",
+      "icons": [{ "src": "/icons/list-96.png", "sizes": "96x96" }]
+    }
+  ],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
