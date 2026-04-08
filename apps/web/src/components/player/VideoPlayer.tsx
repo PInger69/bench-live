@@ -58,14 +58,14 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         const v = videoRef.current
         if (!v) return
         resumeAfterRef.current = !v.paused
-        // Use volume=0 to silence during scrub — NOT v.muted.
-        // Touching v.muted desyncs the React muted state and breaks the
-        // mute button (the next click reads the wrong starting value).
         scrubVolumeRef.current = v.volume
+        // Silence via volume (never touch v.muted — that belongs to the user)
         v.volume = 0
         if (!v.paused) v.pause()
-        const hls = hlsRef.current as { stopLoad?: () => void } | null
-        hls?.stopLoad?.()
+        // Do NOT call hls.stopLoad(). Stopping + restarting HLS loading causes
+        // it to append new segments on top of existing SourceBuffer data,
+        // creating a second overlapping audio stream. HLS.js handles mid-scrub
+        // seeks correctly on its own — we just need to stay out of the way.
       },
 
       // Called on every pointer-move: queue the seek, let the 'seeked' event chain them
@@ -80,9 +80,11 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       endScrub: () => {
         const v = videoRef.current
         if (!v) return
-        const hls = hlsRef.current as { startLoad?: (pos: number) => void } | null
-        hls?.startLoad?.(v.currentTime)
-        v.volume = scrubVolumeRef.current   // restore volume (muted is untouched)
+        // Do NOT call hls.startLoad() — HLS restarts loading naturally when
+        // play() triggers the media element to request more data. Explicitly
+        // calling startLoad() while the SourceBuffer still holds data from the
+        // previous position is what causes the double-audio track.
+        v.volume = scrubVolumeRef.current
         if (resumeAfterRef.current) v.play().catch(() => {})
         resumeAfterRef.current = false
       },
