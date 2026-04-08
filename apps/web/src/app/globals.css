@@ -192,3 +192,7 @@ html, body {
   0%   { transform: translateX(100%); opacity: 0.6; }
   100% { transform: translateX(0);    opacity: 1; }
 }
+@keyframes clip-expand-in {
+  0%   { transform: translateX(40%); opacity: 0; }
+  100% { transform: translateX(0);   opacity: 1; }
+}

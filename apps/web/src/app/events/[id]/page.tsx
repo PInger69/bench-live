@@ -453,6 +453,7 @@ export default function EventPage() {
         open={clipViewOpen}
         onClose={() => setClipViewOpen(false)}
         tags={tags}
+        feed={primaryFeed}
         currentTime={currentTime}
         duration={duration}
         onSeek={handleSeek}
