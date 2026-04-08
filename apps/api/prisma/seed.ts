@@ -103,14 +103,17 @@ async function main() {
   })
 
   // Create demo feeds
+  // mp4Url points to a 40-minute test video in apps/web/public/
+  // Replace with your own video URL (HLS or MP4) as needed
   await prisma.feed.upsert({
     where: { id: 'feed-main' },
-    update: {},
+    update: { mp4Url: '/test-40min.mp4' },
     create: {
       id: 'feed-main',
       eventId: event.id,
       sourceName: 's_00',
       label: 'Main Camera',
+      mp4Url: '/test-40min.mp4',
       quality: 'HQ',
       isActive: true,
     },
