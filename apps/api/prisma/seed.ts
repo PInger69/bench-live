@@ -102,22 +102,29 @@ async function main() {
     },
   })
 
-  // Create demo feeds
-  // mp4Url points to a 40-minute test video in apps/web/public/
-  // Replace with your own video URL (HLS or MP4) as needed
-  await prisma.feed.upsert({
-    where: { id: 'feed-main' },
-    update: { mp4Url: '/test-40min.mp4', hlsUrl: null },
-    create: {
-      id: 'feed-main',
-      eventId: event.id,
-      sourceName: 's_00',
-      label: 'Main Camera',
-      mp4Url: '/test-40min.mp4',
-      quality: 'HQ',
-      isActive: true,
-    },
-  })
+  // Create demo feeds — multi-camera setup
+  // All point to the same test video for now; replace with real source URLs
+  const feedDefs = [
+    { id: 'feed-main',   sourceName: 's_00', label: 'Main Camera' },
+    { id: 'feed-endzone', sourceName: 's_01', label: 'End Zone' },
+    { id: 'feed-wide',   sourceName: 's_02', label: 'Wide Angle' },
+    { id: 'feed-tactic', sourceName: 's_03', label: 'Tactical' },
+  ]
+  for (const fd of feedDefs) {
+    await prisma.feed.upsert({
+      where: { id: fd.id },
+      update: { mp4Url: '/test-40min.mp4', hlsUrl: null },
+      create: {
+        id: fd.id,
+        eventId: event.id,
+        sourceName: fd.sourceName,
+        label: fd.label,
+        mp4Url: '/test-40min.mp4',
+        quality: 'HQ',
+        isActive: true,
+      },
+    })
+  }
 
   console.log('Seed complete.')
   console.log('')

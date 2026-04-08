@@ -9,6 +9,8 @@ import { TagTimeline } from '@/components/player/TagTimeline'
 import { Telestration } from '@/components/player/Telestration'
 import { ClipView } from '@/components/player/ClipView'
 import { ClipExport } from '@/components/player/ClipExport'
+import { SourceSelector, type ViewMode } from '@/components/player/SourceSelector'
+import { QuadView } from '@/components/player/QuadView'
 import { TagButtons } from '@/components/tagger/TagButtons'
 import { VoiceDictation } from '@/components/tagger/VoiceDictation'
 import { ControlsBar, PERIODS, TAG_SETS, detectPeriod } from '@/components/tagger/ControlsBar'
@@ -32,6 +34,8 @@ export default function EventPage() {
   const [duration, setDuration] = useState(0)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [clipViewOpen, setClipViewOpen] = useState(false)
+  const [activeFeedId, setActiveFeedId] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<ViewMode>('single')
 
   // Per-tag colour map + custom names
   const { getColour, setColour, colourMap, getName, setName, nameMap, resetAll } = useTagColours()
@@ -238,7 +242,10 @@ export default function EventPage() {
   const mid = Math.ceil(allTagKeys.length / 2)
   const leftTags = allTagKeys.slice(0, mid)
   const rightTags = allTagKeys.slice(mid)
-  const primaryFeed = event.feeds?.[0] ?? null
+  const feeds = event.feeds ?? []
+  // Auto-set activeFeedId on first load
+  if (!activeFeedId && feeds.length > 0) setActiveFeedId(feeds[0].id)
+  const primaryFeed = feeds.find((f) => f.id === activeFeedId) ?? feeds[0] ?? null
 
   return (
     <main className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--c-bg)' }}>
@@ -248,7 +255,8 @@ export default function EventPage() {
         className="flex-shrink-0 px-3 py-2 flex items-center justify-between gap-2"
         style={{ background: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)' }}
       >
-        <div className="flex items-center gap-2 min-w-0">
+        {/* Left — nav + title */}
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           <button
             onClick={() => router.push('/events')}
             className="text-sm flex-shrink-0 touch-manipulation p-1 transition-colors"
@@ -260,7 +268,17 @@ export default function EventPage() {
           <h1 className="text-sm font-semibold truncate" style={{ color: 'var(--c-text1)' }}>{event.name}</h1>
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
+        {/* Centre — source selector */}
+        <SourceSelector
+          feeds={feeds}
+          activeFeedId={activeFeedId}
+          viewMode={viewMode}
+          onSelectFeed={setActiveFeedId}
+          onSetViewMode={setViewMode}
+        />
+
+        {/* Right — tools + user */}
+        <div className="flex items-center gap-2 flex-shrink-0 flex-1 justify-end">
           {event.homeTeam && event.visitTeam && (
             <span className="hidden sm:block text-xs font-medium" style={{ color: 'var(--c-text2)' }}>
               {event.homeTeam.shortName}
@@ -387,21 +405,32 @@ export default function EventPage() {
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
           {/* Video */}
           <div className="relative flex-1 min-h-0 bg-black flex items-center justify-center">
-            <VideoPlayer
-              ref={playerRef}
-              feed={primaryFeed}
-              onTimeUpdate={setCurrentTime}
-              onDurationChange={setDuration}
-              onPlayStateChange={(p) => {
-                setVideoPaused(!p)
-                if (p) setTelestrationActive(false)
-                if (!videoElRef.current) videoElRef.current = playerRef.current?.getVideoElement() ?? null
-              }}
-            />
-            <Telestration
-              active={telestrationActive}
-              onClose={() => setTelestrationActive(false)}
-            />
+            {viewMode === 'quad' && feeds.length >= 2 ? (
+              <QuadView
+                feeds={feeds}
+                currentTime={currentTime}
+                onSelectFeed={(id) => { setActiveFeedId(id); setViewMode('single') }}
+                onExitQuad={() => setViewMode('single')}
+              />
+            ) : (
+              <>
+                <VideoPlayer
+                  ref={playerRef}
+                  feed={primaryFeed}
+                  onTimeUpdate={setCurrentTime}
+                  onDurationChange={setDuration}
+                  onPlayStateChange={(p) => {
+                    setVideoPaused(!p)
+                    if (p) setTelestrationActive(false)
+                    if (!videoElRef.current) videoElRef.current = playerRef.current?.getVideoElement() ?? null
+                  }}
+                />
+                <Telestration
+                  active={telestrationActive}
+                  onClose={() => setTelestrationActive(false)}
+                />
+              </>
+            )}
           </div>
 
           {/* Tag timeline — getColourByName bridges display name → canonical key
