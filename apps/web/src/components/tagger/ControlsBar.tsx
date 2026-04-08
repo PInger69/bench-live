@@ -127,10 +127,10 @@ export function ControlsBar({
 
         {/* ── iOS Segmented Control — periods ── */}
         <div
-          className="relative flex items-center p-0.5"
+          className="relative flex items-center p-0.5 glass-elevated"
           style={{
-            borderRadius: 10,
-            background: 'var(--c-surf2)',
+            borderRadius: 12,
+            border: '0.5px solid var(--glass-border)',
           }}
         >
           {periods.map((p) => {

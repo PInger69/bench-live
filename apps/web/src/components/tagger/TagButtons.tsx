@@ -28,13 +28,13 @@ export function TagButtons({ names, side, getColour, getName, disabled, tagging,
         paddingBottom: 'max(8px, var(--safe-bottom))',
       }}
     >
-      {/* iOS grouped card */}
+      {/* iOS Liquid Glass grouped card */}
       <div
+        className="glass-elevated relative"
         style={{
-          borderRadius: 14,
+          borderRadius: 16,
           overflow: 'hidden',
-          background: 'var(--c-surface)',
-          boxShadow: '0 0.5px 0 0 var(--c-border)',
+          border: '0.5px solid var(--glass-border)',
         }}
       >
         {names.map((name, i) => {

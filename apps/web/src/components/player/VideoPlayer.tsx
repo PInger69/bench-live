@@ -233,7 +233,13 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           >
             <div
               className="rounded-full flex items-center justify-center"
-              style={{ width: 64, height: 64, background: 'rgba(0,0,0,0.55)' }}
+              style={{
+                width: 64, height: 64,
+                background: 'rgba(30,30,35,0.50)',
+                backdropFilter: 'saturate(200%) blur(40px)',
+                WebkitBackdropFilter: 'saturate(200%) blur(40px)',
+                boxShadow: 'inset 0 0.5px 0 rgba(255,255,255,0.15), 0 8px 32px rgba(0,0,0,0.25)',
+              }}
             >
               {playing ? (
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
