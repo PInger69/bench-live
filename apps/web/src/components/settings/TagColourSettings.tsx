@@ -101,8 +101,8 @@ export function TagColourSettings({
 
       {/* Drawer */}
       <aside
-        className="fixed right-0 top-0 bottom-0 w-80 z-50 flex flex-col shadow-2xl"
-        style={{ background: 'var(--c-surface)', borderLeft: '1px solid var(--c-border)' }}
+        className="fixed right-0 top-0 bottom-0 w-80 z-50 flex flex-col glass"
+        style={{ borderLeft: '0.5px solid var(--glass-border)' }}
       >
         {/* ── Header ── */}
         <div
@@ -115,8 +115,8 @@ export function TagColourSettings({
           </div>
           <button
             onClick={onClose}
-            className="h-7 w-7 rounded-full flex items-center justify-center text-xs transition-colors"
-            style={{ background: 'var(--c-surf2)', color: 'var(--c-text2)' }}
+            className="h-7 w-7 rounded-full flex items-center justify-center text-xs glass-elevated glass-interactive"
+            style={{ color: 'var(--c-text2)', border: '0.5px solid var(--glass-border)' }}
           >
             ✕
           </button>
@@ -130,11 +130,10 @@ export function TagColourSettings({
           <select
             value={viewSport}
             onChange={(e) => handleSportChange(e.target.value)}
-            className="w-full rounded-lg px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500 appearance-none"
+            className="w-full rounded-xl px-3 py-2 text-sm font-medium focus:outline-none appearance-none glass-elevated"
             style={{
-              background: 'var(--c-surf2)',
               color: 'var(--c-text1)',
-              border: '1px solid var(--c-border2)',
+              border: '0.5px solid var(--glass-border)',
               backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
               backgroundRepeat: 'no-repeat',
               backgroundPosition: 'right 10px center',
@@ -205,10 +204,9 @@ export function TagColourSettings({
                 {/* ── Colour picker panel ── */}
                 {pickerOpen && (
                   <div
-                    className="mx-2 mb-2 rounded-xl p-3 space-y-3"
+                    className="mx-2 mb-2 rounded-xl p-3 space-y-3 glass-elevated relative"
                     style={{
-                      background: 'var(--c-bg)',
-                      border: '1px solid var(--c-border)',
+                      border: '0.5px solid var(--glass-border)',
                     }}
                   >
                     {/* Current colour + hex input */}
@@ -278,7 +276,11 @@ export function TagColourSettings({
           </button>
           <button
             onClick={onClose}
-            className="bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-5 py-2 rounded-xl touch-manipulation transition-colors"
+            className="text-sm font-semibold px-5 py-2 rounded-xl touch-manipulation glass-elevated glass-interactive"
+            style={{
+              color: 'var(--c-tint)',
+              border: '0.5px solid var(--glass-border)',
+            }}
           >
             Done
           </button>

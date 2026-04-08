@@ -104,8 +104,7 @@ export function ControlsBar({
   activeColours, onColourFilterChange,
   activeSport, activePeriod, rating, coachPick, lastTagged,
 }: ControlsBarProps) {
-  const periods    = PERIODS[activeSport] ?? PERIODS.GENERIC
-  const autoPeriod = detectPeriod(currentTime, activeSport)
+  const periods = PERIODS[activeSport] ?? PERIODS.GENERIC
 
   function toggleColourFilter(colour: string) {
     if (activeColours.includes(colour)) {
@@ -134,7 +133,6 @@ export function ControlsBar({
           }}
         >
           {periods.map((p) => {
-            const isAuto   = p === autoPeriod
             const isActive = p === activePeriod
             return (
               <button
@@ -143,7 +141,7 @@ export function ControlsBar({
                 className="relative z-10 px-2.5 py-1.5 text-[12px] font-semibold touch-manipulation transition-all duration-200 min-w-[34px]"
                 style={{
                   borderRadius: 8,
-                  color: isActive ? '#fff' : isAuto ? 'var(--c-text2)' : 'var(--c-text3)',
+                  color: isActive ? '#fff' : 'var(--c-text2)',
                   background: isActive ? 'var(--c-tint)' : 'transparent',
                   boxShadow: isActive
                     ? '0 1px 3px rgba(0,0,0,0.2), 0 0 0 0.5px rgba(0,0,0,0.08)'
@@ -152,12 +150,6 @@ export function ControlsBar({
                 }}
               >
                 {p}
-                {isAuto && !isActive && (
-                  <span
-                    className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
-                    style={{ background: 'var(--c-tint)' }}
-                  />
-                )}
               </button>
             )
           })}

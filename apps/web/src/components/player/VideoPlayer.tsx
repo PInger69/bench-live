@@ -263,15 +263,18 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           {/* Mute — always visible */}
           <button
             onClick={toggleMute}
-            className="rounded-full flex items-center justify-center transition-all"
+            className="rounded-full flex items-center justify-center glass-interactive"
             title={muted ? 'Unmute' : 'Mute'}
             style={{
               width: 36, height: 36,
-              background: muted ? 'rgba(239,68,68,0.75)' : 'rgba(0,0,0,0.60)',
+              background: muted ? 'rgba(239,68,68,0.65)' : 'rgba(30,30,35,0.50)',
               color: '#fff',
-              backdropFilter: 'blur(4px)',
-              boxShadow: muted ? '0 0 10px rgba(239,68,68,0.5)' : '0 2px 8px rgba(0,0,0,0.4)',
-              border: muted ? '1px solid rgba(239,68,68,0.6)' : '1px solid rgba(255,255,255,0.12)',
+              backdropFilter: 'saturate(200%) blur(40px)',
+              WebkitBackdropFilter: 'saturate(200%) blur(40px)',
+              boxShadow: muted
+                ? '0 0 12px rgba(239,68,68,0.4), inset 0 0.5px 0 rgba(255,255,255,0.15)'
+                : 'inset 0 0.5px 0 rgba(255,255,255,0.15), 0 8px 32px rgba(0,0,0,0.25)',
+              border: muted ? '0.5px solid rgba(239,68,68,0.5)' : '0.5px solid rgba(255,255,255,0.15)',
             }}
           >
             {muted ? (
@@ -292,14 +295,16 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           {/* Fullscreen — hover-reveal */}
           <button
             onClick={() => videoRef.current?.requestFullscreen?.()}
-            className="rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+            className="rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity glass-interactive"
             title="Fullscreen"
             style={{
               width: 36, height: 36,
-              background: 'rgba(0,0,0,0.60)',
+              background: 'rgba(30,30,35,0.50)',
               color: '#fff',
-              backdropFilter: 'blur(4px)',
-              border: '1px solid rgba(255,255,255,0.12)',
+              backdropFilter: 'saturate(200%) blur(40px)',
+              WebkitBackdropFilter: 'saturate(200%) blur(40px)',
+              boxShadow: 'inset 0 0.5px 0 rgba(255,255,255,0.15), 0 8px 32px rgba(0,0,0,0.25)',
+              border: '0.5px solid rgba(255,255,255,0.15)',
             }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
