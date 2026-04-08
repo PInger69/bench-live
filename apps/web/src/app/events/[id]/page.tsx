@@ -80,13 +80,14 @@ export default function EventPage() {
 
   const handleSeek = useCallback((time: number) => {
     playerRef.current?.seekTo(time)
-    setPeriodOverride(null)
+    // Do NOT clear periodOverride here — the user's manual period
+    // selection should persist through seeks and scrubs. It only
+    // resets when the user taps the auto-detected period or changes sport.
   }, [])
 
   const handleScrubStart = useCallback((time: number) => {
     playerRef.current?.beginScrub()
     playerRef.current?.scrub(time)
-    setPeriodOverride(null)
   }, [])
 
   const handleScrub = useCallback((time: number) => {
