@@ -99,10 +99,9 @@ export function TagTimeline({
 
   return (
     <div
-      className="select-none flex-shrink-0"
+      className="select-none flex-shrink-0 glass"
       style={{
-        background: 'var(--c-surface)',
-        borderTop: '1px solid var(--c-border)',
+        borderTop: '0.5px solid var(--c-border)',
       }}
     >
       {/* Time labels row */}
@@ -296,33 +295,22 @@ export function TagTimeline({
             }}
           >
             <div
-              className="rounded-lg px-2.5 py-2 text-xs whitespace-nowrap shadow-xl"
+              className="glass rounded-xl px-3 py-2 text-xs whitespace-nowrap"
               style={{
-                background: 'var(--c-surface)',
-                border: `1px solid var(--c-border2)`,
-                borderLeft: `3px solid ${resolveColour(hoveredTag)}`,
+                border: '0.5px solid var(--glass-border)',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08)',
                 color: 'var(--c-text1)',
               }}
             >
-              <div className="font-semibold" style={{ color: resolveColour(hoveredTag) }}>
-                {hoveredTag.name}
-              </div>
-              <div className="flex items-center gap-2 mt-0.5" style={{ color: 'var(--c-text3)' }}>
-                <span className="font-mono">{formatTime(hoveredTag.time)}</span>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: resolveColour(hoveredTag) }} />
+                <span className="font-semibold">{hoveredTag.name}</span>
+                <span className="font-mono" style={{ color: 'var(--c-text3)' }}>{formatTime(hoveredTag.time)}</span>
                 {hoveredTag.period && (
-                  <><span>·</span><span>{hoveredTag.period}</span></>
+                  <span style={{ color: 'var(--c-text3)' }}>{hoveredTag.period}</span>
                 )}
               </div>
             </div>
-            <div
-              className="absolute left-1/2 -translate-x-1/2 -bottom-1.5"
-              style={{
-                width: 0, height: 0,
-                borderLeft: '6px solid transparent',
-                borderRight: '6px solid transparent',
-                borderTop: `6px solid var(--c-border2)`,
-              }}
-            />
           </div>
         )}
       </div>

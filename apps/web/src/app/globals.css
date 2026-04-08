@@ -2,50 +2,78 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── CSS custom properties — pure CSS, no Tailwind compilation needed ────── */
-/* These swap automatically when JS adds/removes the `dark` class on <html>  */
+/* ── Apple system font stack ────────────────────────────────────────────── */
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+               'Helvetica Neue', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── iOS-tuned colour palette ───────────────────────────────────────────── */
+/* Light: iOS system grouped background / elevated surfaces                 */
+/* Dark: true black for OLED + elevated greys matching iOS dark mode        */
 
 :root {
-  --c-bg:       #f4f6f9;
-  --c-surface:  #ffffff;
-  --c-surf2:    #eef0f4;
-  --c-surf3:    #dde1e8;
-  --c-border:   #e2e5eb;
-  --c-border2:  #cdd1d9;
-  --c-text1:    #0d1117;
-  --c-text2:    #57606a;
-  --c-text3:    #8b949e;
-  --tag-btn-pct:    10%;
-  --tag-btn-base:   #f4f6f9;
-  --tag-active-pct: 22%;
+  --c-bg:       #F2F2F7;
+  --c-surface:  #FFFFFF;
+  --c-surf2:    #E5E5EA;
+  --c-surf3:    #D1D1D6;
+  --c-border:   rgba(60,60,67,0.12);
+  --c-border2:  rgba(60,60,67,0.20);
+  --c-text1:    #000000;
+  --c-text2:    #3C3C43;
+  --c-text3:    #8E8E93;
+  --c-tint:     #007AFF;          /* iOS system blue */
+  --tag-btn-pct:    8%;
+  --tag-btn-base:   #F2F2F7;
+  --tag-active-pct: 18%;
+  --glass-bg:   rgba(255,255,255,0.72);
+  --glass-border: rgba(255,255,255,0.45);
+  --safe-top:    env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left:   env(safe-area-inset-left, 0px);
+  --safe-right:  env(safe-area-inset-right, 0px);
 }
 
 .dark {
-  --c-bg:       #09090b;
-  --c-surface:  #0f1117;
-  --c-surf2:    #161b22;
-  --c-surf3:    #21262d;
-  --c-border:   #1c2128;
-  --c-border2:  #30363d;
-  --c-text1:    #e6edf3;
-  --c-text2:    #848d97;
-  --c-text3:    #484f58;
+  --c-bg:       #000000;
+  --c-surface:  #1C1C1E;
+  --c-surf2:    #2C2C2E;
+  --c-surf3:    #3A3A3C;
+  --c-border:   rgba(84,84,88,0.65);
+  --c-border2:  rgba(84,84,88,0.45);
+  --c-text1:    #FFFFFF;
+  --c-text2:    #EBEBF5;
+  --c-text3:    #8E8E93;
+  --c-tint:     #0A84FF;          /* iOS dark-mode blue */
   --tag-btn-pct:    14%;
-  --tag-btn-base:   #0f1117;
-  --tag-active-pct: 30%;
+  --tag-btn-base:   #1C1C1E;
+  --tag-active-pct: 28%;
+  --glass-bg:   rgba(28,28,30,0.78);
+  --glass-border: rgba(255,255,255,0.08);
 }
 
-/* Apply theme to root — pure CSS, works with zero Tailwind */
 html, body {
   background-color: var(--c-bg);
   color: var(--c-text1);
+  /* Prevent pull-to-refresh and overscroll bounce in iOS Safari */
+  overscroll-behavior: none;
+  /* Prevent iOS text size adjust */
+  -webkit-text-size-adjust: 100%;
 }
 
 @layer base {
   body { @apply antialiased; }
 }
 
-/* Video player */
+/* ── iOS touch behaviour ────────────────────────────────────────────────── */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+/* ── Video player ───────────────────────────────────────────────────────── */
 .video-container {
   position: relative;
   width: 100%;
@@ -54,23 +82,36 @@ html, body {
   overflow: hidden;
 }
 
-/* LIVE badge pulse */
+/* ── Frosted glass surface ──────────────────────────────────────────────── */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+
+/* ── Animations ─────────────────────────────────────────────────────────── */
 @keyframes tag-pulse {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.6; }
 }
 .tag-live { animation: tag-pulse 1.5s ease-in-out infinite; }
 
-/* Tag button press ripple */
 @keyframes tag-press {
   0%   { transform: scale(1);    opacity: 0.4; }
   100% { transform: scale(2.5);  opacity: 0; }
 }
 .tag-ripple { animation: tag-press 400ms ease-out forwards; }
 
-/* Tagged flash overlay */
 @keyframes tagged-flash {
-  0%   { opacity: 0.35; }
+  0%   { opacity: 0.30; }
   100% { opacity: 0; }
 }
-.tagged-flash { animation: tagged-flash 600ms ease-out forwards; }
+.tagged-flash { animation: tagged-flash 500ms ease-out forwards; }
+
+/* iOS spring-feel scale animation for tag buttons */
+@keyframes ios-spring {
+  0%   { transform: scale(0.92); }
+  60%  { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+.ios-spring { animation: ios-spring 350ms cubic-bezier(0.25, 1.5, 0.5, 1) forwards; }

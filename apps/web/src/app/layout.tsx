@@ -1,13 +1,24 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Bench Live',
   description: 'Professional Sports Video Analysis Platform',
+  appleWebApp: {
+    capable: true,
+    title: 'Bench Live',
+    statusBarStyle: 'black-translucent',
+  },
 }
 
-// Inline script injected before React hydrates so there's no flash of wrong theme.
-// Reads localStorage; falls back to the OS preference.
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+}
+
 const themeScript = `
 (function(){
   try {
@@ -21,10 +32,10 @@ const themeScript = `
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      {/* suppressHydrationWarning stops React complaining that the server
-          rendered without the `dark` class while the client may add it */}
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body>{children}</body>
     </html>

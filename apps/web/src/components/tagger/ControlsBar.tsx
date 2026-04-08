@@ -3,15 +3,14 @@
 import { cn, formatTime } from '@/lib/utils'
 
 const SPORTS = [
-  { key: 'SOCCER',     label: '⚽ Soccer'     },
-  { key: 'HOCKEY',     label: '🏒 Hockey'     },
-  { key: 'RUGBY',      label: '🏉 Rugby'      },
-  { key: 'FOOTBALL',   label: '🏈 Football'   },
-  { key: 'BASKETBALL', label: '🏀 Basketball' },
-  { key: 'GENERIC',    label: '📋 Generic'    },
+  { key: 'SOCCER',     label: 'Soccer'     },
+  { key: 'HOCKEY',     label: 'Hockey'     },
+  { key: 'RUGBY',      label: 'Rugby'      },
+  { key: 'FOOTBALL',   label: 'Football'   },
+  { key: 'BASKETBALL', label: 'Basketball' },
+  { key: 'GENERIC',    label: 'Generic'    },
 ]
 
-/** Ordered period labels per sport */
 export const PERIODS: Record<string, string[]> = {
   SOCCER:     ['1H', '2H', 'ET1', 'ET2', 'P'],
   FOOTBALL:   ['Q1', 'Q2', 'Q3', 'Q4', 'OT'],
@@ -21,14 +20,6 @@ export const PERIODS: Record<string, string[]> = {
   GENERIC:    ['P1', 'P2', 'P3'],
 }
 
-/**
- * Standard start times (seconds) for each period.
- * Soccer  : 2 × 45 min halves; ET 2 × 15 min; P = shootout
- * Hockey  : 3 × 20 min periods; OT sessions 5 min each
- * Rugby   : 2 × 40 min halves; ET 2 × 10 min; SD = sudden death
- * Football: 4 × 15 min quarters
- * Basketball: 4 × 10 min quarters (FIBA)
- */
 export const PERIOD_TIMES: Record<string, { label: string; start: number; end: number }[]> = {
   SOCCER: [
     { label: '1H',  start: 0,    end: 2700   },
@@ -73,10 +64,6 @@ export const PERIOD_TIMES: Record<string, { label: string; start: number; end: n
   ],
 }
 
-/**
- * Returns the period label that contains the given time (seconds).
- * Falls back to the first period if nothing matches.
- */
 export function detectPeriod(timeSeconds: number, sport: string): string {
   const defs = PERIOD_TIMES[sport] ?? PERIOD_TIMES.SOCCER
   return (defs.find((p) => timeSeconds >= p.start && timeSeconds < p.end) ?? defs[0]).label
@@ -117,7 +104,7 @@ export function ControlsBar({
   activeColours, onColourFilterChange,
   activeSport, activePeriod, rating, coachPick, lastTagged,
 }: ControlsBarProps) {
-  const periods   = PERIODS[activeSport] ?? PERIODS.GENERIC
+  const periods    = PERIODS[activeSport] ?? PERIODS.GENERIC
   const autoPeriod = detectPeriod(currentTime, activeSport)
 
   function toggleColourFilter(colour: string) {
@@ -130,16 +117,22 @@ export function ControlsBar({
 
   return (
     <div
-      className="flex-shrink-0"
+      className="flex-shrink-0 glass"
       style={{
-        background: 'var(--c-surface)',
-        borderTop: '1px solid var(--c-border)',
+        borderTop: '0.5px solid var(--c-border)',
+        paddingBottom: 'max(8px, var(--safe-bottom))',
       }}
     >
-      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-3 py-2.5">
+      <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 px-3 py-2">
 
-        {/* ── Period pills ── */}
-        <div className="flex items-center gap-1">
+        {/* ── iOS Segmented Control — periods ── */}
+        <div
+          className="relative flex items-center p-0.5"
+          style={{
+            borderRadius: 10,
+            background: 'var(--c-surf2)',
+          }}
+        >
           {periods.map((p) => {
             const isAuto   = p === autoPeriod
             const isActive = p === activePeriod
@@ -147,46 +140,41 @@ export function ControlsBar({
               <button
                 key={p}
                 onClick={() => onPeriodChange(p)}
-                title={isAuto ? 'Current period (auto-detected)' : undefined}
-                className="px-2.5 py-1.5 rounded-lg text-xs font-bold tracking-wide touch-manipulation transition-all duration-150 min-w-[36px]"
-                style={
-                  isActive
-                    ? {
-                        background: '#2563EB',
-                        color: '#fff',
-                        boxShadow: '0 0 10px rgba(37,99,235,0.45)',
-                      }
-                    : isAuto
-                    ? {
-                        background: 'var(--c-surf3)',
-                        color: 'var(--c-text2)',
-                        outline: '1px solid var(--c-border2)',
-                      }
-                    : {
-                        background: 'transparent',
-                        color: 'var(--c-text3)',
-                      }
-                }
+                className="relative z-10 px-2.5 py-1.5 text-[12px] font-semibold touch-manipulation transition-all duration-200 min-w-[34px]"
+                style={{
+                  borderRadius: 8,
+                  color: isActive ? '#fff' : isAuto ? 'var(--c-text2)' : 'var(--c-text3)',
+                  background: isActive ? 'var(--c-tint)' : 'transparent',
+                  boxShadow: isActive
+                    ? '0 1px 3px rgba(0,0,0,0.2), 0 0 0 0.5px rgba(0,0,0,0.08)'
+                    : undefined,
+                  letterSpacing: '-0.01em',
+                }}
               >
                 {p}
+                {isAuto && !isActive && (
+                  <span
+                    className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
+                    style={{ background: 'var(--c-tint)' }}
+                  />
+                )}
               </button>
             )
           })}
         </div>
 
-        {/* Divider */}
-        <div className="h-4 w-px flex-shrink-0" style={{ background: 'var(--c-border2)' }} />
+        {/* iOS-style separator */}
+        <div className="h-5 w-px flex-shrink-0" style={{ background: 'var(--c-border)' }} />
 
-        {/* ── Colour filter dots ── */}
+        {/* ── Colour filter ── */}
         <div className="flex items-center gap-1.5">
           {activeColours.length > 0 && (
             <button
               onClick={() => onColourFilterChange([])}
-              className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md touch-manipulation transition-all"
+              className="text-[11px] font-semibold px-2 py-1 rounded-full touch-manipulation transition-all"
               style={{
-                color: 'var(--c-text2)',
-                background: 'var(--c-surf2)',
-                border: '1px solid var(--c-border2)',
+                color: 'var(--c-tint)',
+                background: 'color-mix(in srgb, var(--c-tint) 10%, transparent)',
               }}
             >
               All
@@ -198,37 +186,30 @@ export function ControlsBar({
               <button
                 key={colour}
                 onClick={() => toggleColourFilter(colour)}
-                title={active ? 'Remove filter' : 'Filter to this colour'}
-                className="rounded-full touch-manipulation transition-all duration-150 flex-shrink-0"
+                className="rounded-full touch-manipulation transition-all duration-200 flex-shrink-0"
                 style={{
-                  width: active ? 22 : 18,
-                  height: active ? 22 : 18,
+                  width: active ? 24 : 18,
+                  height: active ? 24 : 18,
                   background: colour,
-                  boxShadow: active
-                    ? `0 0 10px ${colour}90, 0 0 4px ${colour}`
-                    : undefined,
-                  outline: active ? `2px solid var(--c-text1)` : 'none',
-                  outlineOffset: active ? '2px' : '0',
-                  opacity: active ? 1 : 0.4,
+                  boxShadow: active ? `0 0 0 2px var(--c-bg), 0 0 0 3.5px ${colour}` : undefined,
+                  opacity: active ? 1 : 0.35,
                 }}
               />
             )
           })}
         </div>
 
-        {/* Divider */}
-        <div className="h-4 w-px flex-shrink-0" style={{ background: 'var(--c-border2)' }} />
+        <div className="h-5 w-px flex-shrink-0" style={{ background: 'var(--c-border)' }} />
 
-        {/* ── Rating stars ── */}
+        {/* ── Rating ── */}
         <div className="flex items-center gap-0.5">
           {[1, 2, 3, 4, 5].map((s) => (
             <button
               key={s}
               onClick={() => onRatingChange(rating === s ? 0 : s)}
-              className="text-lg touch-manipulation transition-all duration-100"
+              className="text-[17px] touch-manipulation transition-all duration-100"
               style={{
-                color: s <= rating ? '#facc15' : 'var(--c-surf3)',
-                textShadow: s <= rating ? '0 0 8px rgba(250,204,21,0.6)' : undefined,
+                color: s <= rating ? '#FF9F0A' : 'var(--c-surf3)',
                 transform: s <= rating ? 'scale(1.1)' : undefined,
               }}
             >
@@ -240,14 +221,13 @@ export function ControlsBar({
         {/* ── Coach Pick ── */}
         <button
           onClick={() => onCoachPickChange(!coachPick)}
-          className="px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide touch-manipulation transition-all duration-150"
+          className="px-2.5 py-1.5 rounded-full text-[12px] font-semibold touch-manipulation transition-all duration-200"
           style={
             coachPick
               ? {
-                  background: 'rgba(234,179,8,0.15)',
-                  color: '#ca8a04',
-                  outline: '1px solid rgba(234,179,8,0.45)',
-                  boxShadow: '0 0 8px rgba(234,179,8,0.25)',
+                  background: 'color-mix(in srgb, #FF9F0A 15%, transparent)',
+                  color: '#FF9F0A',
+                  boxShadow: '0 0 0 1px rgba(255,159,10,0.35)',
                 }
               : {
                   background: 'var(--c-surf2)',
@@ -261,16 +241,13 @@ export function ControlsBar({
         {/* ── Time + last tagged ── */}
         <div className="flex items-center gap-2">
           {lastTagged && (
-            <span
-              className="text-xs font-semibold"
-              style={{ color: '#22c55e', textShadow: '0 0 8px rgba(34,197,94,0.5)' }}
-            >
-              ✓ {lastTagged}
+            <span className="text-[12px] font-semibold" style={{ color: '#34C759' }}>
+              &#10003; {lastTagged}
             </span>
           )}
           <span
-            className="text-xs font-mono tabular-nums"
-            style={{ color: 'var(--c-text3)' }}
+            className="text-[12px] font-mono tabular-nums"
+            style={{ color: 'var(--c-text3)', letterSpacing: '-0.02em' }}
           >
             {formatTime(currentTime)}
           </span>
