@@ -52,8 +52,10 @@ export function Telestration({ active, onClose }: TelestrationProps) {
 
     ctx.clearRect(0, 0, rect.width, rect.height)
 
-    const all = currentStroke.current ? [...strokes, currentStroke.current] : strokes
+    const cur = currentStroke.current
+    const all = cur ? [...strokes, cur] : strokes
     for (const s of all) {
+      if (!s) continue
       ctx.strokeStyle = s.colour
       ctx.fillStyle = s.colour
       ctx.lineWidth = s.width
