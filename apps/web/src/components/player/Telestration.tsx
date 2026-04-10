@@ -32,28 +32,42 @@ export function Telestration({ active, onClose }: TelestrationProps) {
   const [colour, setColour] = useState('#EF4444')
   const [strokeWidth, setStrokeWidth] = useState(3)
   const [strokes, setStrokes] = useState<Stroke[]>([])
+  const strokesRef = useRef<Stroke[]>([])       // mirror for imperative reads
   const currentStroke = useRef<Stroke | null>(null)
   const drawing = useRef(false)
+  const canvasSized = useRef(false)
 
-  // Redraw all strokes + current in-progress stroke
-  const redraw = useCallback(() => {
+  // Keep ref in sync with state
+  strokesRef.current = strokes
+
+  // Redraw all committed strokes + the in-progress stroke.
+  // Uses refs so it always sees the latest data regardless of React render cycle.
+  function redraw() {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Match canvas resolution to display size
+    // Size the canvas backing store to 2× display for retina sharpness.
+    // Only do this once (or on resize) — resetting canvas.width clears the
+    // context state including the scale transform.
     const rect = canvas.getBoundingClientRect()
-    if (canvas.width !== rect.width * 2 || canvas.height !== rect.height * 2) {
-      canvas.width = rect.width * 2
-      canvas.height = rect.height * 2
-      ctx.scale(2, 2)
+    const w2 = Math.round(rect.width * 2)
+    const h2 = Math.round(rect.height * 2)
+    if (canvas.width !== w2 || canvas.height !== h2) {
+      canvas.width = w2
+      canvas.height = h2
+      canvasSized.current = false
+    }
+    if (!canvasSized.current) {
+      ctx.setTransform(2, 0, 0, 2, 0, 0)
+      canvasSized.current = true
     }
 
     ctx.clearRect(0, 0, rect.width, rect.height)
 
     const cur = currentStroke.current
-    const all = cur ? [...strokes, cur] : strokes
+    const all: Stroke[] = cur ? [...strokesRef.current, cur] : strokesRef.current
     for (const s of all) {
       if (!s) continue
       ctx.strokeStyle = s.colour
@@ -72,13 +86,14 @@ export function Telestration({ active, onClose }: TelestrationProps) {
         drawRect(ctx, s.points[0], s.points[s.points.length - 1])
       }
     }
-  }, [strokes])
+  }
 
-  useEffect(() => { redraw() }, [redraw])
+  // Redraw whenever committed strokes change (e.g. after pointer-up adds one)
+  useEffect(() => { redraw() }, [strokes]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Clear on close
   useEffect(() => {
-    if (!active) { setStrokes([]); currentStroke.current = null }
+    if (!active) { setStrokes([]); strokesRef.current = []; currentStroke.current = null }
   }, [active])
 
   function toLocal(e: React.PointerEvent): Point {
@@ -112,8 +127,16 @@ export function Telestration({ active, onClose }: TelestrationProps) {
   function handlePointerUp() {
     if (!drawing.current || !currentStroke.current) return
     drawing.current = false
-    setStrokes((prev) => [...prev, currentStroke.current!])
+    // Commit the finished stroke: copy it, clear the ref, update state, then redraw
+    const finished = { ...currentStroke.current, points: [...currentStroke.current.points] }
     currentStroke.current = null
+    setStrokes((prev) => {
+      const next = [...prev, finished]
+      strokesRef.current = next      // sync ref immediately so redraw sees it
+      return next
+    })
+    // Redraw synchronously so the stroke is visible before React re-renders
+    redraw()
   }
 
   function undo() {
